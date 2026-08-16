@@ -1,202 +1,226 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_colors.dart';
-import '../../core/widgets/glass_card.dart';
 
+import '../../core/controllers/planner_store.dart';
+import '../../core/localization/app_localizations.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_typography.dart';
+import '../../core/utils/date_utils.dart';
+import '../../core/widgets/app_scope.dart';
+import '../../core/widgets/fade_slide_in.dart';
+import '../../core/widgets/glass_card.dart';
+import '../../data/models/planner_models.dart';
+
+/// Detail view for a single real task, resolved from the store by [taskId].
 class TaskDetailScreen extends StatefulWidget {
-  const TaskDetailScreen({super.key});
+  final String taskId;
+
+  const TaskDetailScreen({super.key, required this.taskId});
 
   @override
   State<TaskDetailScreen> createState() => _TaskDetailScreenState();
 }
 
 class _TaskDetailScreenState extends State<TaskDetailScreen> {
-  bool _isCommitment = true;
-  bool _isCompleted = false;
-  final int _estimatedMinutes = 60;
-  final int _actualMinutes = 92;
-  final int _postponedCount = 3;
-
-  final List<Map<String, dynamic>> _subtasks = [
-    {'title': 'طراحی وایرفریم اولیه', 'isCompleted': true},
-    {'title': 'پیاده‌سازی کامپوننت‌های UI فلاتر', 'isCompleted': true},
-    {'title': 'اتصال به دیتابیس Drift و تست کامل', 'isCompleted': false},
-  ];
-
   @override
   Widget build(BuildContext context) {
-    final subtasksDone = _subtasks.where((s) => s['isCompleted'] as bool).length;
-    final subtasksProgress = _subtasks.isNotEmpty ? subtasksDone / _subtasks.length : 0.0;
+    final l10n = AppLocalizations.of(context);
+    final store = AppScope.of(context).store;
+    final isFa = l10n.isFa;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('جزئیات وظیفه و تعهد'),
-        actions: [
-          IconButton(
-            icon: Icon(
-              _isCommitment ? Icons.star_rounded : Icons.star_outline_rounded,
-              color: _isCommitment ? AppColors.primary : AppColors.onSurfaceVariant,
+    return ListenableBuilder(
+      listenable: store,
+      builder: (_, __) {
+        final task = store.taskById(widget.taskId);
+        if (task == null) {
+          // Deleted while open — pop back gracefully.
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted && Navigator.of(context).canPop()) Navigator.of(context).pop();
+          });
+          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        }
+
+        return Scaffold(
+          appBar: AppBar(
+            title: Text(l10n.translate('taskDetailTitle')),
+            actions: [
+              IconButton(
+                icon: Icon(
+                  task.isCommitment ? Icons.star_rounded : Icons.star_outline_rounded,
+                  color: task.isCommitment ? AppColors.primary : AppColors.onSurfaceVariant,
+                ),
+                tooltip: l10n.translate('topCommitments'),
+                onPressed: () {
+                  task.isCommitment = !task.isCommitment;
+                  store.updateTask(task);
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete_outline_rounded, color: AppColors.error),
+                tooltip: l10n.translate('delete'),
+                onPressed: () async {
+                  final navigator = Navigator.of(context);
+                  final messenger = ScaffoldMessenger.of(context);
+                  await store.deleteTask(task);
+                  if (!mounted) return;
+                  navigator.pop();
+                  messenger.showSnackBar(
+                    SnackBar(content: Text(l10n.translate('taskDeleted'))),
+                  );
+                },
+              ),
+            ],
+          ),
+          body: SafeArea(
+            child: ListView(
+              padding: const EdgeInsets.all(20),
+              children: [
+                FadeSlideIn(child: _heroCard(l10n, store, task)),
+                const SizedBox(height: 16),
+                FadeSlideIn(
+                  delay: const Duration(milliseconds: 80),
+                  child: _infoCard(l10n, task, isFa),
+                ),
+                const SizedBox(height: 16),
+                FadeSlideIn(
+                  delay: const Duration(milliseconds: 160),
+                  child: _descriptionCard(l10n, task),
+                ),
+              ],
             ),
-            onPressed: () => setState(() => _isCommitment = !_isCommitment),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _heroCard(AppLocalizations l10n, PlannerStore store, TaskItem task) {
+    return GlassCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              GestureDetector(
+                onTap: () => store.toggleTaskDone(task),
+                child: AnimatedScale(
+                  scale: task.isCompleted ? 1.0 : 0.92,
+                  duration: const Duration(milliseconds: 200),
+                  child: Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: task.isCompleted ? AppColors.success : Colors.transparent,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: task.isCompleted ? AppColors.success : AppColors.outlineVariant,
+                        width: 2,
+                      ),
+                    ),
+                    child: task.isCompleted
+                        ? const Icon(Icons.check_rounded, size: 18, color: Colors.white)
+                        : null,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: AnimatedDefaultTextStyle(
+                  duration: const Duration(milliseconds: 250),
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    decoration: task.isCompleted ? TextDecoration.lineThrough : null,
+                    color: task.isCompleted ? AppColors.onSurfaceVariant : AppColors.onSurface,
+                  ),
+                  child: Text(task.title),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.edit_outlined, size: 20, color: AppColors.primary),
+                tooltip: l10n.translate('editTaskTitle'),
+                onPressed: () => _showEditTitleDialog(l10n, store, task),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _badge(
+                task.priority == 2
+                    ? l10n.translate('priorityHigh')
+                    : task.priority == 0
+                        ? l10n.translate('priorityLow')
+                        : l10n.translate('priorityMedium'),
+                AppColors.errorContainer,
+                AppColors.error,
+              ),
+              _badge(
+                '${l10n.translate('estimatedLabel')}: ${task.estimatedMinutes}',
+                AppColors.primaryFixed,
+                AppColors.primary,
+              ),
+              if (task.isCommitment)
+                _badge(l10n.translate('topCommitments'), AppColors.surfaceContainerHigh, AppColors.primary),
+            ],
           ),
         ],
       ),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(20),
-          children: [
-            // Hero Title & Status Card
-            GlassCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Checkbox(
-                        value: _isCompleted,
-                        activeColor: AppColors.primary,
-                        onChanged: (val) => setState(() => _isCompleted = val ?? false),
-                      ),
-                      Expanded(
-                        child: Text(
-                          'طراحی و پیاده‌سازی سیستم مدیریت خود ZedPlan',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            decoration: _isCompleted ? TextDecoration.lineThrough : null,
-                            color: AppColors.onSurface,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      _badge('اولیت بالا', AppColors.errorContainer, AppColors.error),
-                      const SizedBox(width: 8),
-                      _badge('انرژی بالا (۳/۳)', AppColors.primaryFixed, AppColors.primary),
-                      const SizedBox(width: 8),
-                      if (_isCommitment)
-                        _badge('تعهد اصلی', AppColors.surfaceContainerHigh, AppColors.primary),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
+    );
+  }
 
-            // Time Tracking (Estimated vs Actual) Card
-            GlassCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'رهگیری زمان (تخمینی vs واقعی)',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.onSurface),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      Column(
-                        children: [
-                          const Text('تخمین زده شده', style: TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant)),
-                          const SizedBox(height: 4),
-                          Text('$_estimatedMinutes دقیقه', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary)),
-                        ],
-                      ),
-                      Container(width: 1, height: 30, color: AppColors.outlineVariant),
-                      Column(
-                        children: [
-                          const Text('زمان واقعی صرف‌شده', style: TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant)),
-                          const SizedBox(height: 4),
-                          Text('$_actualMinutes دقیقه', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.error)),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    '⚠️ این وظیفه ۳۲ دقیقه بیشتر از زمان تخمینی شما طول کشیده است.',
-                    style: TextStyle(fontSize: 12, color: AppColors.error),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
+  Widget _infoCard(AppLocalizations l10n, TaskItem task, bool isFa) {
+    final useJalali = AppScope.of(context).settings.useJalali;
+    return GlassCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(l10n.translate('startTimeLabel'), style: AppTypography.labelCaps()),
+          const SizedBox(height: 8),
+          Text(ZedDateUtils.fullDate(task.createdAt, fa: isFa, jalali: useJalali), style: AppTypography.bodyLg()),
+        ],
+      ),
+    );
+  }
 
-            // Postponement Analysis Warning Card
-            if (_postponedCount > 0) ...[
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.warning.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.history_rounded, color: AppColors.warning),
-                        const SizedBox(width: 8),
-                        Text(
-                          'این وظیفه $_postponedCount بار به تعویق افتاده است!',
-                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.onSurface),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'پیشنهاد سیستم: آیا می‌خواهید این وظیفه را به گام‌های کوچک‌تر تقسیم کنید یا زمان آن را کاهش دهید؟',
-                      style: TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-            ],
+  Widget _descriptionCard(AppLocalizations l10n, TaskItem task) {
+    return GlassCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(l10n.translate('noDescription'), style: AppTypography.labelCaps()),
+          const SizedBox(height: 8),
+          Text(
+            task.description.isEmpty ? l10n.translate('noDescription') : task.description,
+            style: AppTypography.bodyLg(color: AppColors.onSurfaceVariant),
+          ),
+        ],
+      ),
+    );
+  }
 
-            // Subtasks Section
-            GlassCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'زیر‌وظیفه‌ها',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.onSurface),
-                      ),
-                      Text(
-                        '$subtasksDone / ${_subtasks.length}',
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  LinearProgressIndicator(
-                    value: subtasksProgress,
-                    backgroundColor: AppColors.surfaceContainerHigh,
-                    color: AppColors.primary,
-                  ),
-                  const SizedBox(height: 12),
-                  ..._subtasks.map((st) => CheckboxListTile(
-                        value: st['isCompleted'] as bool,
-                        title: Text(st['title'] as String, style: const TextStyle(fontSize: 14)),
-                        onChanged: (val) {
-                          setState(() {
-                            st['isCompleted'] = val ?? false;
-                          });
-                        },
-                      )),
-                ],
-              ),
-            ),
-          ],
-        ),
+  Future<void> _showEditTitleDialog(AppLocalizations l10n, PlannerStore store, TaskItem task) async {
+    final controller = TextEditingController(text: task.title);
+    await showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.translate('editTaskTitle')),
+        content: TextField(controller: controller, autofocus: true),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: Text(l10n.translate('cancel'))),
+          FilledButton(
+            onPressed: () {
+              final text = controller.text.trim();
+              if (text.isNotEmpty) {
+                task.title = text;
+                store.updateTask(task);
+              }
+              Navigator.of(ctx).pop();
+            },
+            child: Text(l10n.translate('save')),
+          ),
+        ],
       ),
     );
   }
@@ -204,14 +228,8 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   Widget _badge(String label, Color bg, Color fg) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: fg),
-      ),
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(12)),
+      child: Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: fg)),
     );
   }
 }

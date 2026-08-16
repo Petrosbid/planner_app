@@ -1,31 +1,40 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:planner_app/core/controllers/app_settings.dart';
+import 'package:planner_app/core/controllers/planner_store.dart';
 import 'package:planner_app/core/theme/app_theme.dart';
+import 'package:planner_app/core/widgets/app_scope.dart';
 import 'package:planner_app/features/focus/focus_session_screen.dart';
 import 'package:planner_app/features/focus/widgets/focus_timer_ring.dart';
 import 'package:planner_app/features/focus/widgets/focus_mode_selector.dart';
 import 'package:planner_app/features/focus/widgets/focus_task_card.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   setUpAll(() {
     GoogleFonts.config.allowRuntimeFetching = false;
   });
 
+  Future<Widget> wrapApp(Widget child) async {
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+    return AppScope(
+      settings: AppSettings(prefs),
+      store: PlannerStore(prefs),
+      child: MaterialApp(
+        theme: AppTheme.lightTheme,
+        home: Directionality(textDirection: TextDirection.rtl, child: child),
+      ),
+    );
+  }
+
   testWidgets('FocusSessionScreen renders properly in center and displays components', (WidgetTester tester) async {
     tester.view.physicalSize = const Size(800, 1000);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(() => tester.view.resetPhysicalSize());
 
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: AppTheme.lightTheme,
-        home: const Directionality(
-          textDirection: TextDirection.rtl,
-          child: FocusSessionScreen(),
-        ),
-      ),
-    );
+    await tester.pumpWidget(await wrapApp(const FocusSessionScreen()));
     await tester.pump();
 
     // Verify main components are present
@@ -41,15 +50,7 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
     addTearDown(() => tester.view.resetPhysicalSize());
 
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: AppTheme.lightTheme,
-        home: const Directionality(
-          textDirection: TextDirection.rtl,
-          child: FocusSessionScreen(),
-        ),
-      ),
-    );
+    await tester.pumpWidget(await wrapApp(const FocusSessionScreen()));
     await tester.pump();
 
     // Find play icon
@@ -78,15 +79,7 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
     addTearDown(() => tester.view.resetPhysicalSize());
 
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: AppTheme.lightTheme,
-        home: const Directionality(
-          textDirection: TextDirection.rtl,
-          child: FocusSessionScreen(),
-        ),
-      ),
-    );
+    await tester.pumpWidget(await wrapApp(const FocusSessionScreen()));
     await tester.pump();
 
     // Switch to Deep Work (کار عمیق)

@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
+
+import '../../core/controllers/planner_store.dart';
+import '../../core/localization/app_localizations.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_typography.dart';
+import '../../core/utils/date_utils.dart';
+import '../../core/widgets/app_scope.dart';
+import '../../core/widgets/fade_slide_in.dart';
 import '../../core/widgets/glass_card.dart';
-import '../../core/widgets/progress_ring.dart';
+import '../../data/models/planner_models.dart';
 
 class GoalsVisionScreen extends StatefulWidget {
   const GoalsVisionScreen({super.key});
@@ -11,209 +18,174 @@ class GoalsVisionScreen extends StatefulWidget {
 }
 
 class _GoalsVisionScreenState extends State<GoalsVisionScreen> {
-  final List<Map<String, dynamic>> _lifeAreas = [
-    {'name': 'سلامتی & تناسب اندام', 'icon': Icons.favorite_rounded, 'color': Color(0xFF10B981)},
-    {'name': 'شغلی & حرفه‌ای', 'icon': Icons.work_rounded, 'color': AppColors.primary},
-    {'name': 'یادگیری & رشد', 'icon': Icons.school_rounded, 'color': Color(0xFFF59E0B)},
-    {'name': 'مالی & سرمایه‌گذاری', 'icon': Icons.account_balance_wallet_rounded, 'color': Color(0xFF8B5CF6)},
-  ];
-
-  final List<Map<String, dynamic>> _goals = [
-    {
-      'title': 'ارتقاء به سمت Senior Mobile Architect',
-      'lifeArea': 'شغلی & حرفه‌ای',
-      'progress': 65.0,
-      'targetDate': '۱۵ اسفند ۱۴۰۵',
-      'milestonesCount': 5,
-      'completedMilestones': 3,
-      'projectsCount': 2,
-    },
-    {
-      'title': 'ورزش منظم ۴ روز در هفته و تغذیه سالم',
-      'lifeArea': 'سلامتی & تناسب اندام',
-      'progress': 80.0,
-      'targetDate': 'مداوم',
-      'milestonesCount': 4,
-      'completedMilestones': 3,
-      'projectsCount': 1,
-    },
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final store = AppScope.of(context).store;
+    final isFa = l10n.isFa;
+
     return Scaffold(
+      appBar: AppBar(
+        title: Text(l10n.translate('goalsTitle')),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add_rounded),
+            tooltip: l10n.translate('addGoal'),
+            onPressed: () => _showAddGoalSheet(l10n),
+          ),
+        ],
+      ),
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(20),
-          children: [
-            const Text(
-              'چشم‌انداز & اهداف راهبردی',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.primary),
-            ),
-            const SizedBox(height: 6),
-            const Text(
-              'چشم‌انداز خود را به اهداف ملموس و اقدام‌های روزانه تبدیل کنید.',
-              style: TextStyle(fontSize: 14, color: AppColors.onSurfaceVariant),
-            ),
-            const SizedBox(height: 20),
-
-            // Vision Statement Banner
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [AppColors.primary, AppColors.primaryContainer],
-                  begin: Alignment.topRight,
-                  end: Alignment.bottomLeft,
-                ),
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.visibility_rounded, color: Colors.white),
-                      SizedBox(width: 8),
-                      Text(
-                        'بیانیه چشم‌انداز من',
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white70),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 10),
-                  Text(
-                    '«ایجاد زندگی متعادل، عمیق و متمرکز با تسلط کامل بر انضباط فردی و خلق سیستم‌های نرم‌افزاری ارزش‌آفرین.»',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.white, height: 1.5),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Life Areas Carousel
-            const Text(
-              'حوزه‌های زندگی',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.onSurface),
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              height: 100,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: _lifeAreas.length,
-                itemBuilder: (ctx, idx) {
-                  final area = _lifeAreas[idx];
-                  return Container(
-                    width: 140,
-                    margin: const EdgeInsets.only(right: 12),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceContainerLowest,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: AppColors.outlineVariant, width: 0.5),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        CircleAvatar(
-                          radius: 18,
-                          backgroundColor: (area['color'] as Color).withValues(alpha: 0.2),
-                          child: Icon(area['icon'] as IconData, size: 20, color: area['color'] as Color),
-                        ),
-                        const Spacer(),
-                        Text(
-                          area['name'] as String,
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.onSurface),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Goals List
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'اهداف فعال',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.onSurface),
-                ),
-                TextButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.add, size: 18),
-                  label: const Text('هدف جدید'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            ..._goals.map((g) => _buildGoalCard(g)),
-          ],
+        child: ListenableBuilder(
+          listenable: store,
+          builder: (context, _) {
+            final goals = store.goals;
+            if (goals.isEmpty) {
+              return EmptyStateView(
+                icon: Icons.flag_outlined,
+                title: l10n.translate('emptyGoalsTitle'),
+                message: l10n.translate('emptyGoalsMessage'),
+                actionLabel: l10n.translate('addGoal'),
+                onAction: () => _showAddGoalSheet(l10n),
+              );
+            }
+            return ListView.builder(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+              itemCount: goals.length,
+              itemBuilder: (ctx, i) {
+                final goal = goals[i];
+                return FadeSlideIn(
+                  key: ValueKey(goal.id),
+                  delay: Duration(milliseconds: 50 * (i < 8 ? i : 8)),
+                  child: _goalCard(l10n, store, goal, isFa),
+                );
+              },
+            );
+          },
         ),
       ),
     );
   }
 
-  Widget _buildGoalCard(Map<String, dynamic> goal) {
-    final progress = goal['progress'] as double;
-
+  Widget _goalCard(AppLocalizations l10n, PlannerStore store, GoalItem goal, bool isFa) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16.0),
+      padding: const EdgeInsets.only(bottom: 12),
       child: GlassCard(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                ProgressRing(
-                  percentage: progress,
-                  size: 56,
-                  strokeWidth: 6,
-                  primaryColor: AppColors.primary,
-                  centerChild: Text(
-                    '${progress.round()}٪',
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary),
+                Expanded(
+                  child: Text(
+                    goal.title,
+                    style: AppTypography.headlineMd(),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        goal['title'] as String,
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.onSurface),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        goal['lifeArea'] as String,
-                        style: const TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant),
-                      ),
-                    ],
-                  ),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline_rounded, size: 20, color: AppColors.error),
+                  tooltip: l10n.translate('delete'),
+                  onPressed: () => store.deleteGoal(goal),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            const Divider(height: 1, color: AppColors.outlineVariant),
+            if (goal.description.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(goal.description, style: AppTypography.bodySm(), maxLines: 2, overflow: TextOverflow.ellipsis),
+            ],
             const SizedBox(height: 12),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'مایلستون‌ها: ${goal['completedMilestones']} از ${goal['milestonesCount']}',
-                  style: const TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant),
-                ),
-                Text(
-                  'تاريخ هدف: ${goal['targetDate']}',
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary),
+                  '${l10n.translate('progress')}: ${ZedDateUtils.toFaDigits((goal.progress * 100).round(), fa: isFa)}٪',
+                  style: AppTypography.bodySm(),
                 ),
               ],
             ),
+            const SizedBox(height: 4),
+            TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0.0, end: goal.progress),
+              duration: const Duration(milliseconds: 600),
+              builder: (context, value, _) => LinearProgressIndicator(
+                value: value,
+                minHeight: 8,
+                backgroundColor: AppColors.surfaceContainerHigh,
+                color: AppColors.primary,
+                borderRadius: BorderRadius.circular(6),
+              ),
+            ),
+            Slider(
+              value: goal.progress,
+              onChanged: (v) {
+                goal.progress = v;
+                store.updateGoalProgress(goal, v);
+              },
+            ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showAddGoalSheet(AppLocalizations l10n) async {
+    final titleController = TextEditingController();
+    final descController = TextEditingController();
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceContainerLowest,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(l10n.translate('addGoal'), style: AppTypography.headlineMd()),
+              const SizedBox(height: 16),
+              TextField(
+                controller: titleController,
+                autofocus: true,
+                decoration: InputDecoration(
+                  hintText: l10n.translate('goalTitleHint'),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: descController,
+                maxLines: 2,
+                decoration: InputDecoration(
+                  hintText: l10n.translate('noteBodyHint'),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: FilledButton(
+                  onPressed: () {
+                    final title = titleController.text.trim();
+                    if (title.isEmpty) return;
+                    AppScope.of(context).store.addGoal(
+                          title: title,
+                          description: descController.text.trim(),
+                        );
+                    Navigator.of(ctx).pop();
+                  },
+                  child: Text(l10n.translate('save')),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

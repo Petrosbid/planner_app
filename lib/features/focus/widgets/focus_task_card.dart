@@ -90,7 +90,7 @@ class FocusTaskCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              const Text(
+              Text(
                 'پیشنهادهای سریع:',
                 style: TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant),
               ),

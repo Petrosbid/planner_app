@@ -21,7 +21,7 @@ class CustomBottomNavBar extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: const EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 24),
       height: 64,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(32),

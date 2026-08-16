@@ -1,7 +1,15 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_colors.dart';
-import '../../core/widgets/glass_card.dart';
 
+import '../../core/localization/app_localizations.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_typography.dart';
+import '../../core/utils/date_utils.dart';
+import '../../core/widgets/app_scope.dart';
+import '../../core/widgets/fade_slide_in.dart';
+import '../../data/models/planner_models.dart';
+
+/// 4-step daily reflection wizard. Saves a real [DailyReviewRecord];
+/// reopening the same day edits it.
 class DailyReviewScreen extends StatefulWidget {
   const DailyReviewScreen({super.key});
 
@@ -10,73 +18,146 @@ class DailyReviewScreen extends StatefulWidget {
 }
 
 class _DailyReviewScreenState extends State<DailyReviewScreen> {
-  int _currentStep = 0;
-  double _energyRating = 4.0;
-  double _focusRating = 3.5;
-  final _obstaclesController = TextEditingController();
+  final PageController _pageController = PageController();
+  int _step = 0;
+
+  int _energy = 3;
+  int _focus = 3;
+  final _obstacleController = TextEditingController();
   final _reflectionController = TextEditingController();
-  final List<TextEditingController> _priorityControllers = [
-    TextEditingController(text: 'نهایی‌سازی فاز ۱ نرم‌افزار'),
-    TextEditingController(text: 'جلسه بازبینی کد'),
-    TextEditingController(text: 'ورزش عصرگاهی ۳۰ دقیقه'),
-  ];
+
+  @override
+  void initState() {
+    super.initState();
+    final existing = AppScope.of(context).store.todayReview;
+    if (existing != null) {
+      _energy = existing.energyRating;
+      _focus = existing.focusRating;
+      _obstacleController.text = existing.obstacles;
+      _reflectionController.text = existing.reflection;
+    }
+  }
 
   @override
   void dispose() {
-    _obstaclesController.dispose();
+    _pageController.dispose();
+    _obstacleController.dispose();
     _reflectionController.dispose();
-    for (var c in _priorityControllers) {
-      c.dispose();
-    }
     super.dispose();
+  }
+
+  Future<void> _save() async {
+    await AppScope.of(context).store.saveDailyReview(DailyReviewRecord(
+          date: DateTime.now(),
+          energyRating: _energy,
+          focusRating: _focus,
+          obstacles: _obstacleController.text.trim(),
+          reflection: _reflectionController.text.trim(),
+        ));
+    if (!mounted) return;
+    Navigator.of(context).pop();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(AppLocalizations.of(context).translate('reviewSavedOk'))),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final store = AppScope.of(context).store;
+    final isFa = l10n.isFa;
+    final todayTasks = store.todayTasks;
+    final done = todayTasks.where((t) => t.isCompleted).toList();
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('ارزیابی و انعکاس روزانه'),
-      ),
+      appBar: AppBar(title: Text(l10n.dailyReviewTitle)),
       body: SafeArea(
         child: Column(
           children: [
-            // Progress Indicator
             LinearProgressIndicator(
-              value: (_currentStep + 1) / 4,
+              value: (_step + 1) / 4,
               backgroundColor: AppColors.surfaceContainerHigh,
               color: AppColors.primary,
+              minHeight: 4,
             ),
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
-                child: _buildStepContent(),
+              child: PageView(
+                controller: _pageController,
+                physics: const NeverScrollableScrollPhysics(),
+                onPageChanged: (i) => setState(() => _step = i),
+                children: [
+                  // 1. Accomplishments (real data)
+                  ListView(
+                    padding: const EdgeInsets.all(24),
+                    children: [
+                      Text(l10n.translate('accomplishments'), style: AppTypography.headlineMd()),
+                      const SizedBox(height: 8),
+                      Text(
+                        '${ZedDateUtils.toFaDigits(done.length, fa: isFa)}/${ZedDateUtils.toFaDigits(todayTasks.length, fa: isFa)} ${l10n.translate('workloadProgress')}',
+                        style: AppTypography.bodySm(),
+                      ),
+                      const SizedBox(height: 16),
+                      if (done.isEmpty)
+                        EmptyStateView(
+                          icon: Icons.task_alt_rounded,
+                          title: l10n.translate('emptyTasksTitle'),
+                          message: l10n.translate('emptyTasksMessage'),
+                        )
+                      else
+                        for (final t in done)
+                          ListTile(
+                            leading: const Icon(Icons.check_circle_rounded, color: AppColors.success),
+                            title: Text(t.title),
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                    ],
+                  ),
+                  // 2. Energy & focus ratings
+                  _ratingStep(l10n),
+                  // 3. Obstacles
+                  _textStep(
+                    l10n.translate('mainObstacles'),
+                    Icons.block_outlined,
+                    _obstacleController,
+                  ),
+                  // 4. Reflection
+                  _textStep(
+                    l10n.translate('accomplishments'),
+                    Icons.self_improvement_rounded,
+                    _reflectionController,
+                  ),
+                ],
               ),
             ),
-            // Bottom Action Bar
             Padding(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(24),
               child: Row(
                 children: [
-                  if (_currentStep > 0) ...[
+                  if (_step > 0)
                     Expanded(
                       child: OutlinedButton(
-                        onPressed: () => setState(() => _currentStep--),
-                        child: const Text('قبلی'),
+                        onPressed: () => _pageController.previousPage(
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeOutCubic,
+                        ),
+                        child: Text(l10n.translate('back')),
                       ),
                     ),
-                    const SizedBox(width: 12),
-                  ],
+                  if (_step > 0) const SizedBox(width: 12),
                   Expanded(
                     flex: 2,
-                    child: ElevatedButton(
+                    child: FilledButton(
                       onPressed: () {
-                        if (_currentStep < 3) {
-                          setState(() => _currentStep++);
+                        if (_step < 3) {
+                          _pageController.nextPage(
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.easeOutCubic,
+                          );
                         } else {
-                          _saveReview();
+                          _save();
                         }
                       },
-                      child: Text(_currentStep == 3 ? 'ثبت و تکمیل ارزیابی' : 'بعدی'),
+                      child: Text(_step < 3 ? l10n.translate('next') : l10n.saveReview),
                     ),
                   ),
                 ],
@@ -88,184 +169,79 @@ class _DailyReviewScreenState extends State<DailyReviewScreen> {
     );
   }
 
-  Widget _buildStepContent() {
-    switch (_currentStep) {
-      case 0:
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'گام ۱: سنجش انرژی & تمرکز امروز',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.primary),
+  Widget _ratingStep(AppLocalizations l10n) {
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          FadeSlideIn(
+            child: Column(
+              children: [
+                Text(l10n.energyLevel, style: AppTypography.headlineMd()),
+                const SizedBox(height: 20),
+                _ratingSelector(_energy, (v) => setState(() => _energy = v)),
+              ],
             ),
-            const SizedBox(height: 8),
-            const Text(
-              'امروز احساس انرژی و سطح تمرکز شما چگونه بود؟',
-              style: TextStyle(fontSize: 14, color: AppColors.onSurfaceVariant),
+          ),
+          const SizedBox(height: 40),
+          FadeSlideIn(
+            delay: const Duration(milliseconds: 100),
+            child: Column(
+              children: [
+                Text(l10n.focusScore, style: AppTypography.headlineMd()),
+                const SizedBox(height: 20),
+                _ratingSelector(_focus, (v) => setState(() => _focus = v)),
+              ],
             ),
-            const SizedBox(height: 32),
-            GlassCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('سطح انرژی', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                      Text('${_energyRating.toStringAsFixed(1)} / ۵.۰', style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
-                    ],
-                  ),
-                  Slider(
-                    value: _energyRating,
-                    min: 1.0,
-                    max: 5.0,
-                    divisions: 8,
-                    activeColor: AppColors.primary,
-                    onChanged: (val) => setState(() => _energyRating = val),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-            GlassCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('کیفیت تمرکز', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                      Text('${_focusRating.toStringAsFixed(1)} / ۵.۰', style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
-                    ],
-                  ),
-                  Slider(
-                    value: _focusRating,
-                    min: 1.0,
-                    max: 5.0,
-                    divisions: 8,
-                    activeColor: AppColors.primary,
-                    onChanged: (val) => setState(() => _focusRating = val),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        );
-      case 1:
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'گام ۲: مرور کارکردهای امروز',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.primary),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'وظایف انجام شده و به تعویق افتاده روز را بررسی کنید.',
-              style: TextStyle(fontSize: 14, color: AppColors.onSurfaceVariant),
-            ),
-            const SizedBox(height: 20),
-            GlassCard(
-              child: const Column(
-                children: [
-                  ListTile(
-                    leading: Icon(Icons.check_circle, color: AppColors.success),
-                    title: Text('طراحی معماری فلاتر ZedPlan'),
-                    subtitle: Text('تکمیل شده | ٪۱۰۰'),
-                  ),
-                  Divider(),
-                  ListTile(
-                    leading: Icon(Icons.history_toggle_off, color: AppColors.warning),
-                    title: Text('نوشتن تست‌های واحد Drift DB'),
-                    subtitle: Text('به تعویق افتاده برای فردا'),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        );
-      case 2:
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'گام ۳: تحلیل موانع & یادگیری',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.primary),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'چه مانع یا حواس‌پرتی در طول روز رخ داد و چه آموزه‌ای داشتید؟',
-              style: TextStyle(fontSize: 14, color: AppColors.onSurfaceVariant),
-            ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: _obstaclesController,
-              maxLines: 3,
-              decoration: const InputDecoration(
-                labelText: 'موانع اصلی امروز',
-                hintText: 'مثال: پیام‌های غیرمنتظره و جلسه طولانی...',
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _reflectionController,
-              maxLines: 3,
-              decoration: const InputDecoration(
-                labelText: 'یادداشت انعکاسی / تصمیم برای بهبود',
-                hintText: 'مثال: زمان‌های کار عمیق را در تقویم مسدود خواهم کرد...',
-              ),
-            ),
-          ],
-        );
-      default:
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'گام ۴: ۳ اولویت کلیدی فردا',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.primary),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'مهم‌ترین اقداماتی که فردا باید بدون فوت وقت انجام شوند را مشخص کنید.',
-              style: TextStyle(fontSize: 14, color: AppColors.onSurfaceVariant),
-            ),
-            const SizedBox(height: 20),
-            ...List.generate(
-              3,
-              (i) => Padding(
-                padding: const EdgeInsets.only(bottom: 12.0),
-                child: TextField(
-                  controller: _priorityControllers[i],
-                  decoration: InputDecoration(
-                    prefixIcon: CircleAvatar(
-                      radius: 12,
-                      backgroundColor: AppColors.primaryContainer,
-                      child: Text('${i + 1}', style: const TextStyle(color: Colors.white, fontSize: 12)),
-                    ),
-                    labelText: 'اولویت ${i + 1}',
-                  ),
-                ),
-              ),
-            ),
-          ],
-        );
-    }
+          ),
+        ],
+      ),
+    );
   }
 
-  void _saveReview() {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('ارزیابی با موفقیت ثبت شد! ✨'),
-        content: const Text('تحلیل‌های رفتار روزانه شما به‌روزرسانی شد. فردا را با انرژی آغاز کنید.'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              Navigator.of(context).pop();
-            },
-            child: const Text('بازگشت به خانه'),
+  Widget _ratingSelector(int value, ValueChanged<int> onChanged) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(5, (i) {
+        final v = i + 1;
+        final active = v <= value;
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 6),
+          child: GestureDetector(
+            onTap: () => onChanged(v),
+            child: AnimatedScale(
+              scale: active ? 1.1 : 1.0,
+              duration: const Duration(milliseconds: 150),
+              child: Icon(
+                active ? Icons.circle : Icons.circle_outlined,
+                size: 28,
+                color: active ? AppColors.primary : AppColors.outlineVariant,
+              ),
+            ),
+          ),
+        );
+      }),
+    );
+  }
+
+  Widget _textStep(String title, IconData icon, TextEditingController controller) {
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Icon(icon, size: 48, color: AppColors.primary),
+          const SizedBox(height: 16),
+          Text(title, textAlign: TextAlign.center, style: AppTypography.headlineMd()),
+          const SizedBox(height: 24),
+          TextField(
+            controller: controller,
+            maxLines: 5,
+            decoration: InputDecoration(
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+            ),
           ),
         ],
       ),

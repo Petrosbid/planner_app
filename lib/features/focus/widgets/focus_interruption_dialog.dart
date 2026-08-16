@@ -74,7 +74,7 @@ class FocusInterruptionDialog extends StatelessWidget {
                 child: const Icon(Icons.notifications_paused_outlined, color: AppColors.error, size: 22),
               ),
               const SizedBox(width: 12),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -131,7 +131,7 @@ class FocusInterruptionDialog extends StatelessWidget {
                           ),
                         ),
                       ),
-                      const Icon(Icons.chevron_left_rounded, size: 20, color: AppColors.onSurfaceVariant),
+                      Icon(Icons.chevron_left_rounded, size: 20, color: AppColors.onSurfaceVariant),
                     ],
                   ),
                 ),

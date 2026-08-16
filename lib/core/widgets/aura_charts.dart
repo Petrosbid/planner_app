@@ -38,7 +38,7 @@ class HabitHeatmapGrid extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               dayLabels[index],
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w500,
                 color: AppColors.onSurfaceVariant,
@@ -166,7 +166,7 @@ class SimpleBarChart extends StatelessWidget {
               const SizedBox(height: 6),
               Text(
                 i < labels.length ? labels[i] : '',
-                style: const TextStyle(fontSize: 10, color: AppColors.onSurfaceVariant),
+                style: TextStyle(fontSize: 10, color: AppColors.onSurfaceVariant),
               ),
             ],
           );

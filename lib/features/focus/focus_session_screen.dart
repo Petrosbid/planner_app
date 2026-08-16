@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../core/localization/app_localizations.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/widgets/app_scope.dart';
 import 'widgets/focus_timer_ring.dart';
 import 'widgets/focus_mode_selector.dart';
 import 'widgets/focus_task_card.dart';
@@ -14,7 +16,7 @@ class FocusSessionScreen extends StatefulWidget {
 
   const FocusSessionScreen({
     super.key,
-    this.taskTitle = 'کار عمیق: طراحی رابط کاربری ZedPlan',
+    this.taskTitle = '',
     this.totalMinutes = 25,
   });
 
@@ -24,7 +26,7 @@ class FocusSessionScreen extends StatefulWidget {
 
 class _FocusSessionScreenState extends State<FocusSessionScreen> {
   // Session parameters
-  String _activeTaskTitle = 'کار عمیق: طراحی رابط کاربری ZedPlan';
+  String _activeTaskTitle = '';
   int _sessionTotalMinutes = 25;
   int _remainingSeconds = 25 * 60;
   FocusPresetMode _currentMode = FocusPresetMode.pomodoro;
@@ -42,16 +44,18 @@ class _FocusSessionScreenState extends State<FocusSessionScreen> {
   AmbientSoundType _selectedSound = AmbientSoundType.rain;
   double _ambientVolume = 70.0;
 
-  // Daily aggregate stats (sample/persisted)
-  int _todayFocusedMinutes = 75;
-  int _todaySessionsCompleted = 3;
-
   @override
   void initState() {
     super.initState();
     _activeTaskTitle = widget.taskTitle;
     _sessionTotalMinutes = widget.totalMinutes;
     _remainingSeconds = _sessionTotalMinutes * 60;
+    // Default to the newest pending task, if any.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _activeTaskTitle.isNotEmpty) return;
+      final tasks = AppScope.of(context).store.tasks.where((t) => !t.isCompleted).toList();
+      if (tasks.isNotEmpty) setState(() => _activeTaskTitle = tasks.first.title);
+    });
   }
 
   @override
@@ -85,14 +89,25 @@ class _FocusSessionScreenState extends State<FocusSessionScreen> {
         setState(() => _remainingSeconds--);
       } else {
         _timer?.cancel();
-        setState(() {
-          _isRunning = false;
-          _todayFocusedMinutes += _sessionTotalMinutes;
-          _todaySessionsCompleted += 1;
-        });
+        setState(() => _isRunning = false);
+        _recordCompletedSession();
         _handleSessionCompleted();
       }
     });
+  }
+
+  /// Persist the finished session so stats and analytics reflect it.
+  void _recordCompletedSession() {
+    final store = AppScope.of(context).store;
+    store.recordFocus(
+      minutes: _sessionTotalMinutes,
+      interruptions: _interruptions,
+      taskTitle: _activeTaskTitle.isEmpty ? null : _activeTaskTitle,
+    );
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(AppLocalizations.of(context).translate('focusRecorded'))),
+    );
   }
 
   void _pauseTimer() {
@@ -580,48 +595,56 @@ class _FocusSessionScreenState extends State<FocusSessionScreen> {
   }
 
   Widget _buildDailyFocusStatsBar({required bool isDark}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurfaceContainerLow : AppColors.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: isDark ? AppColors.darkOutlineVariant.withValues(alpha: 0.3) : AppColors.outlineVariant.withValues(alpha: 0.3),
-          width: 0.5,
+    final store = AppScope.of(context).store;
+    final l10n = AppLocalizations.of(context);
+    return ListenableBuilder(
+      listenable: store,
+      builder: (context, _) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.darkSurfaceContainerLow : AppColors.surfaceContainerLowest,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isDark
+                ? AppColors.darkOutlineVariant.withValues(alpha: 0.3)
+                : AppColors.outlineVariant.withValues(alpha: 0.3),
+            width: 0.5,
+          ),
         ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _miniStat(
-            icon: Icons.timer_outlined,
-            title: 'زمان امروز',
-            value: '${_formatPersianDigits(_todayFocusedMinutes.toString())} دقیقه',
-            color: AppColors.primary,
-          ),
-          Container(
-            width: 1,
-            height: 22,
-            color: isDark ? AppColors.darkOutlineVariant : AppColors.outlineVariant,
-          ),
-          _miniStat(
-            icon: Icons.check_circle_outline_rounded,
-            title: 'جلسات',
-            value: '${_formatPersianDigits(_todaySessionsCompleted.toString())} جلسه',
-            color: AppColors.success,
-          ),
-          Container(
-            width: 1,
-            height: 22,
-            color: isDark ? AppColors.darkOutlineVariant : AppColors.outlineVariant,
-          ),
-          _miniStat(
-            icon: Icons.local_fire_department_rounded,
-            title: 'زنجیره',
-            value: '${_formatPersianDigits('۴')} روز',
-            color: AppColors.warning,
-          ),
-        ],
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _miniStat(
+              icon: Icons.timer_outlined,
+              title: l10n.translate('focusTodayStat'),
+              value:
+                  '${_formatPersianDigits(store.todayFocusMinutes.toString())} ${l10n.translate('minutesStat')}',
+              color: AppColors.primary,
+            ),
+            Container(
+              width: 1,
+              height: 22,
+              color: isDark ? AppColors.darkOutlineVariant : AppColors.outlineVariant,
+            ),
+            _miniStat(
+              icon: Icons.check_circle_outline_rounded,
+              title: l10n.translate('sessionsStat'),
+              value: _formatPersianDigits(store.todayFocusRecords.length.toString()),
+              color: AppColors.success,
+            ),
+            Container(
+              width: 1,
+              height: 22,
+              color: isDark ? AppColors.darkOutlineVariant : AppColors.outlineVariant,
+            ),
+            _miniStat(
+              icon: Icons.notifications_paused_outlined,
+              title: l10n.translate('mainObstacles'),
+              value: _formatPersianDigits(_interruptions.toString()),
+              color: AppColors.warning,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -651,7 +674,7 @@ class _FocusSessionScreenState extends State<FocusSessionScreen> {
             ),
             Text(
               title,
-              style: const TextStyle(fontSize: 8.5, color: AppColors.onSurfaceVariant),
+              style: TextStyle(fontSize: 8.5, color: AppColors.onSurfaceVariant),
             ),
           ],
         ),

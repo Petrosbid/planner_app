@@ -10,7 +10,7 @@ class AppTheme {
       primaryColor: AppColors.primary,
       scaffoldBackgroundColor: AppColors.background,
       fontFamily: AppTypography.fontFa,
-      colorScheme: const ColorScheme.light(
+      colorScheme: ColorScheme.light(
         primary: AppColors.primary,
         onPrimary: AppColors.onPrimary,
         primaryContainer: AppColors.primaryContainer,
@@ -34,7 +34,7 @@ class AppTheme {
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(24),
-          side: const BorderSide(color: AppColors.outlineVariant, width: 0.5),
+          side: BorderSide(color: AppColors.outlineVariant, width: 0.5),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
@@ -57,7 +57,7 @@ class AppTheme {
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.primary,
           minimumSize: const Size.fromHeight(48),
-          side: const BorderSide(color: AppColors.outlineVariant, width: 1),
+          side: BorderSide(color: AppColors.outlineVariant, width: 1),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
@@ -73,7 +73,7 @@ class AppTheme {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppColors.outlineVariant, width: 0.5),
+          borderSide: BorderSide(color: AppColors.outlineVariant, width: 0.5),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
@@ -86,7 +86,7 @@ class AppTheme {
           borderRadius: BorderRadius.circular(24),
         ),
       ),
-      bottomSheetTheme: const BottomSheetThemeData(
+      bottomSheetTheme: BottomSheetThemeData(
         backgroundColor: AppColors.surfaceContainerLowest,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -102,7 +102,7 @@ class AppTheme {
       primaryColor: AppColors.primaryContainer,
       scaffoldBackgroundColor: AppColors.darkBackground,
       fontFamily: AppTypography.fontFa,
-      colorScheme: const ColorScheme.dark(
+      colorScheme: ColorScheme.dark(
         primary: AppColors.primaryContainer,
         onPrimary: AppColors.onPrimary,
         primaryContainer: AppColors.primary,
@@ -164,7 +164,7 @@ class AppTheme {
           borderRadius: BorderRadius.circular(24),
         ),
       ),
-      bottomSheetTheme: const BottomSheetThemeData(
+      bottomSheetTheme: BottomSheetThemeData(
         backgroundColor: AppColors.darkSurface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),

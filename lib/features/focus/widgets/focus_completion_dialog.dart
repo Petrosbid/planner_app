@@ -113,7 +113,7 @@ class FocusCompletionDialog extends StatelessWidget {
               taskTitle,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 13, color: AppColors.onSurfaceVariant),
+              style: TextStyle(fontSize: 13, color: AppColors.onSurfaceVariant),
             ),
             const SizedBox(height: 20),
 
@@ -231,7 +231,7 @@ class FocusCompletionDialog extends StatelessWidget {
         const SizedBox(height: 2),
         Text(
           label,
-          style: const TextStyle(fontSize: 10, color: AppColors.onSurfaceVariant),
+          style: TextStyle(fontSize: 10, color: AppColors.onSurfaceVariant),
         ),
       ],
     );

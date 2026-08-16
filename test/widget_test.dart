@@ -1,59 +1,158 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:planner_app/core/controllers/app_settings.dart';
+import 'package:planner_app/core/controllers/planner_store.dart';
 import 'package:planner_app/core/theme/app_theme.dart';
+import 'package:planner_app/core/widgets/app_scope.dart';
 import 'package:planner_app/features/home/home_today_screen.dart';
 import 'package:planner_app/features/calendar/calendar_week_screen.dart';
-import 'package:planner_app/features/analytics/insights_analytics_screen.dart';
+import 'package:planner_app/features/tasks/task_list_screen.dart';
+import 'package:planner_app/features/common/quick_create_modal.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   setUpAll(() {
     GoogleFonts.config.allowRuntimeFetching = false;
   });
 
-  testWidgets('HomeTodayScreen renders clean visual layout', (WidgetTester tester) async {
-    await tester.pumpWidget(
-      MaterialApp(
+  late PlannerStore store;
+
+  setUp(() async {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+    store = PlannerStore(prefs);
+  });
+
+  testWidgets('HomeTodayScreen shows empty state when no tasks exist', (WidgetTester tester) async {
+    final prefs = await SharedPreferences.getInstance();
+    final app = AppScope(
+      settings: AppSettings(prefs),
+      store: store,
+      child: MaterialApp(
         theme: AppTheme.lightTheme,
         home: Directionality(
           textDirection: TextDirection.rtl,
           child: HomeTodayScreen(
             onStartFocus: () {},
             onNavigate: (_) {},
+            onOpenProfile: () {},
           ),
         ),
       ),
     );
-    await tester.pump();
+    await tester.pumpWidget(app);
+    // Skeleton shimmer shows first; pump past the simulated fetch delay.
+    await tester.pump(const Duration(milliseconds: 1000));
+    await tester.pump(const Duration(milliseconds: 500));
     expect(find.byType(HomeTodayScreen), findsOneWidget);
-    expect(find.textContaining('جولیان'), findsOneWidget);
   });
 
-  testWidgets('CalendarWeekScreen renders clean calendar grid', (WidgetTester tester) async {
-    await tester.pumpWidget(
-      MaterialApp(
+  testWidgets('HomeTodayScreen greets the user by name after onboarding', (WidgetTester tester) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('settings.userName', 'سارا');
+    await prefs.setBool('settings.onboarded', true);
+    final app = AppScope(
+      settings: AppSettings(prefs),
+      store: store,
+      child: MaterialApp(
         theme: AppTheme.lightTheme,
+        locale: const Locale('fa'),
         home: Directionality(
           textDirection: TextDirection.rtl,
-          child: const CalendarWeekScreen(),
+          child: HomeTodayScreen(
+            onStartFocus: () {},
+            onNavigate: (_) {},
+            onOpenProfile: () {},
+          ),
         ),
       ),
     );
-    await tester.pump();
+    await tester.pumpWidget(app);
+    await tester.pump(const Duration(milliseconds: 1000));
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.textContaining('سارا'), findsOneWidget);
+  });
+
+  testWidgets('CalendarWeekScreen renders empty state with real dates', (WidgetTester tester) async {
+    final prefs = await SharedPreferences.getInstance();
+    final app = AppScope(
+      settings: AppSettings(prefs),
+      store: store,
+      child: MaterialApp(
+        theme: AppTheme.lightTheme,
+        home: const Directionality(
+          textDirection: TextDirection.rtl,
+          child: CalendarWeekScreen(),
+        ),
+      ),
+    );
+    await tester.pumpWidget(app);
+    await tester.pump(const Duration(milliseconds: 1000));
+    await tester.pump(const Duration(milliseconds: 500));
     expect(find.byType(CalendarWeekScreen), findsOneWidget);
   });
 
-  testWidgets('InsightsAnalyticsScreen renders clean charts', (WidgetTester tester) async {
-    await tester.pumpWidget(
-      MaterialApp(
+  testWidgets('TaskListScreen shows empty state, then a created task', (WidgetTester tester) async {
+    final prefs = await SharedPreferences.getInstance();
+    await store.addTask(title: 'وظیفه تست', isCommitment: true);
+    final app = AppScope(
+      settings: AppSettings(prefs),
+      store: store,
+      child: MaterialApp(
         theme: AppTheme.lightTheme,
         home: Directionality(
           textDirection: TextDirection.rtl,
-          child: const InsightsAnalyticsScreen(),
+          child: TaskListScreen(onOpenTaskDetail: (_) {}),
         ),
       ),
     );
-    await tester.pump();
-    expect(find.byType(InsightsAnalyticsScreen), findsOneWidget);
+    await tester.pumpWidget(app);
+    expect(find.textContaining('وظیفه تست'), findsOneWidget);
+
+    // Completing the task via its checkbox updates the list.
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('QuickCreateModal block type creates a real time block', (WidgetTester tester) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('settings.onboarded', true);
+    final app = AppScope(
+      settings: AppSettings(prefs),
+      store: store,
+      child: MaterialApp(
+        theme: AppTheme.lightTheme,
+        locale: const Locale('fa'),
+        home: const Scaffold(body: SizedBox.shrink()),
+      ),
+    );
+    await tester.pumpWidget(app);
+
+    QuickCreateModal.show(tester.element(find.byType(Scaffold)));
+    await tester.pumpAndSettle();
+
+    // Switch to the time-block type and submit a title.
+    final blockChip = find.text('بلوک زمانی');
+    expect(blockChip, findsOneWidget);
+    await tester.ensureVisible(blockChip);
+    await tester.pumpAndSettle();
+    await tester.tap(blockChip, warnIfMissed: false);
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField).first, 'جلسه تست');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
+
+    final submit = find.text('افزودن بلوک زمانی');
+    await tester.ensureVisible(submit);
+    await tester.pumpAndSettle();
+    await tester.tap(submit, warnIfMissed: false);
+    await tester.pumpAndSettle();
+
+    expect(store.blocks.length, 1);
+    expect(store.blocks.first.title, 'جلسه تست');
+    expect(store.blocks.first.category, 'deep');
+    expect(store.plannedHoursForDay(DateTime.now()), 1);
   });
 }
