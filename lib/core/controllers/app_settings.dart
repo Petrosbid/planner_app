@@ -9,10 +9,19 @@ class AppSettings extends ChangeNotifier {
   static const _keyOnboarded = 'settings.onboarded';
   static const _keyCalendar = 'settings.calendarType';
   static const _keySeedColor = 'settings.seedColor';
+  static const _keyNotifications = 'settings.notificationsEnabled';
 
   final SharedPreferences _prefs;
 
   AppSettings(this._prefs);
+
+  /// Master switch for all local notifications (default on).
+  bool get notificationsEnabled => _prefs.getBool(_keyNotifications) ?? true;
+
+  Future<void> setNotificationsEnabled(bool value) async {
+    await _prefs.setBool(_keyNotifications, value);
+    notifyListeners();
+  }
 
   /// Brand color seed (ARGB). Defaults to the ZedPlan blue.
   int get seedColor => _prefs.getInt(_keySeedColor) ?? 0xFF3C51C2;

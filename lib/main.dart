@@ -9,6 +9,7 @@ import 'core/theme/app_colors.dart';
 import 'core/theme/app_theme.dart';
 import 'core/widgets/app_scope.dart';
 import 'core/widgets/custom_nav_bar.dart';
+import 'core/notifications/notification_service.dart';
 import 'features/common/quick_create_modal.dart';
 
 // Feature Screens
@@ -45,6 +46,25 @@ class ZedPlanApp extends StatefulWidget {
 class _ZedPlanAppState extends State<ZedPlanApp> {
   late final AppSettings _settings = AppSettings(widget.prefs);
   late final PlannerStore _store = PlannerStore(widget.prefs);
+
+  @override
+  void initState() {
+    super.initState();
+    _initNotifications();
+  }
+
+  Future<void> _initNotifications() async {
+    final service = NotificationService.instance;
+    await service.init(seedColor: _settings.seedColor);
+    if (!_settings.notificationsEnabled) return;
+    await service.reschedule(_store, fa: _settings.locale.languageCode == 'fa');
+    // Keep the schedule in sync whenever blocks change.
+    _store.addListener(() {
+      if (!_settings.notificationsEnabled) return;
+      service.setSeedColor(_settings.seedColor);
+      service.reschedule(_store, fa: _settings.locale.languageCode == 'fa');
+    });
+  }
 
   @override
   Widget build(BuildContext context) {

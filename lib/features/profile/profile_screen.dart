@@ -6,6 +6,7 @@ import '../../core/localization/app_localizations.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/utils/date_utils.dart';
+import '../../core/notifications/notification_service.dart';
 import '../../core/widgets/app_scope.dart';
 import '../../core/widgets/fade_slide_in.dart';
 
@@ -309,6 +310,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
             title: Text(l10n.translate('darkMode')),
             value: _settings.themeMode == ThemeMode.dark,
             onChanged: (v) => _settings.setThemeMode(v ? ThemeMode.dark : ThemeMode.light),
+          ),
+          SwitchListTile(
+            secondary: Icon(Icons.notifications_active_outlined, color: AppColors.primary),
+            title: Text(l10n.translate('notificationsLabel')),
+            subtitle: Text(l10n.translate('notificationsDesc'), style: AppTypography.bodySm().copyWith(fontSize: 11)),
+            isThreeLine: true,
+            value: _settings.notificationsEnabled,
+            onChanged: (v) async {
+              final store = AppScope.of(context).store;
+              await _settings.setNotificationsEnabled(v);
+              await NotificationService.instance.setEnabled(v, store);
+            },
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),

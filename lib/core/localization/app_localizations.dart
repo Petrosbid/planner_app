@@ -216,6 +216,10 @@ class AppLocalizations {
     'reasonClarity': 'کمبود شفافیت کار',
     'reasonMotivation': 'انگیزه پایین',
     'reasonOther': 'سایر',
+    // Notifications
+    'notificationsSection': 'اعلان‌ها',
+    'notificationsLabel': 'اعلان‌های زمان‌بندی و یادآور روزانه',
+    'notificationsDesc': 'شروع و پایان بلوک‌های زمانی، ثبت نتیجه و جمع‌بندی پایان روز',
     'languageSection': 'زبان',
     'aboutSection': 'درباره',
     'aboutBody': 'ZedPlan یک برنامه‌ریز آفلاین با تمرکز بر رفتار و خودمدیریتی است. نسخه ۰.۲.۰',
@@ -482,6 +486,10 @@ class AppLocalizations {
     'reasonClarity': 'Lack of clarity',
     'reasonMotivation': 'Low motivation',
     'reasonOther': 'Other',
+    // Notifications
+    'notificationsSection': 'Notifications',
+    'notificationsLabel': 'Schedule alerts & daily reminder',
+    'notificationsDesc': 'Block start/end prompts, outcome submission, and the end-of-day wrap-up',
     'languageSection': 'Language',
     'aboutSection': 'About',
     'aboutBody': 'ZedPlan is an offline planner focused on behavior and self-management. Version 0.2.0',
