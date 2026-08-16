@@ -8,10 +8,19 @@ class AppSettings extends ChangeNotifier {
   static const _keyName = 'settings.userName';
   static const _keyOnboarded = 'settings.onboarded';
   static const _keyCalendar = 'settings.calendarType';
+  static const _keySeedColor = 'settings.seedColor';
 
   final SharedPreferences _prefs;
 
   AppSettings(this._prefs);
+
+  /// Brand color seed (ARGB). Defaults to the ZedPlan blue.
+  int get seedColor => _prefs.getInt(_keySeedColor) ?? 0xFF3C51C2;
+
+  Future<void> setSeedColor(int argb) async {
+    await _prefs.setInt(_keySeedColor, argb);
+    notifyListeners();
+  }
 
   /// Which calendar system dates are displayed in: 'jalali' or 'gregorian'.
   /// Stored dates are always absolute DateTime; only presentation changes.

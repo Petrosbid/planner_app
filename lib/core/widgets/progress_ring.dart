@@ -1,6 +1,5 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
-import '../theme/app_colors.dart';
 
 class ProgressRing extends StatelessWidget {
   final double percentage; // 0.0 to 100.0
@@ -15,7 +14,7 @@ class ProgressRing extends StatelessWidget {
     required this.percentage,
     this.size = 96.0,
     this.strokeWidth = 8.0,
-    this.primaryColor = AppColors.primary,
+    required this.primaryColor,
     this.trackColor = const Color(0x1F3C51C2),
     this.centerChild,
   });

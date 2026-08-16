@@ -62,7 +62,9 @@ class TimeBlockItem {
   double startHour; // e.g. 8.0, 10.5
   double durationHours;
   int colorValue;
-  String category; // 'deep' | 'meeting' | 'review'
+  String category; // 'deep' | 'meeting' | 'review' | custom
+  bool isDone; // user-submitted outcome
+  bool hasOutcome; // whether any outcome was submitted yet
 
   TimeBlockItem({
     required this.id,
@@ -72,6 +74,8 @@ class TimeBlockItem {
     this.durationHours = 1,
     this.colorValue = 0xFF3C51C2,
     this.category = 'deep',
+    this.isDone = false,
+    this.hasOutcome = false,
   });
 
   Map<String, dynamic> toMap() => {
@@ -82,6 +86,8 @@ class TimeBlockItem {
         'durationHours': durationHours,
         'colorValue': colorValue,
         'category': category,
+        'isDone': isDone,
+        'hasOutcome': hasOutcome,
       };
 
   factory TimeBlockItem.fromMap(Map<String, dynamic> map) => TimeBlockItem(
@@ -92,6 +98,38 @@ class TimeBlockItem {
         durationHours: (map['durationHours'] as num?)?.toDouble() ?? 1,
         colorValue: map['colorValue'] as int? ?? 0xFF3C51C2,
         category: map['category'] as String? ?? 'deep',
+        isDone: map['isDone'] as bool? ?? false,
+        hasOutcome: map['hasOutcome'] as bool? ?? map['isDone'] as bool? ?? false,
+      );
+}
+
+/// One logged distraction / not-done reason.
+/// [reason] is a canonical key for built-ins or free text for custom ones.
+class DistractionRecord {
+  final String id;
+  final DateTime at;
+  final String reason;
+  final String? relatedTitle; // task or block it relates to, if any
+
+  DistractionRecord({
+    required this.id,
+    required this.at,
+    required this.reason,
+    this.relatedTitle,
+  });
+
+  Map<String, dynamic> toMap() => {
+        'id': id,
+        'at': at.toIso8601String(),
+        'reason': reason,
+        'relatedTitle': relatedTitle,
+      };
+
+  factory DistractionRecord.fromMap(Map<String, dynamic> map) => DistractionRecord(
+        id: map['id'] as String,
+        at: DateTime.tryParse(map['at'] as String? ?? '') ?? DateTime.now(),
+        reason: map['reason'] as String? ?? 'other',
+        relatedTitle: map['relatedTitle'] as String?,
       );
 }
 
@@ -178,15 +216,22 @@ class GoalItem {
 class ProjectItem {
   final String id;
   String title;
+  String description;
   double progress;
 
-  ProjectItem({required this.id, required this.title, this.progress = 0});
+  ProjectItem({
+    required this.id,
+    required this.title,
+    this.description = '',
+    this.progress = 0,
+  });
 
-  Map<String, dynamic> toMap() => {'id': id, 'title': title, 'progress': progress};
+  Map<String, dynamic> toMap() => {'id': id, 'title': title, 'description': description, 'progress': progress};
 
   factory ProjectItem.fromMap(Map<String, dynamic> map) => ProjectItem(
         id: map['id'] as String,
         title: map['title'] as String,
+        description: map['description'] as String? ?? '',
         progress: (map['progress'] as num?)?.toDouble() ?? 0,
       );
 }

@@ -77,7 +77,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+          borderSide: BorderSide(color: AppColors.primary, width: 1.5),
         ),
       ),
       dialogTheme: DialogThemeData(
@@ -155,7 +155,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppColors.primaryContainer, width: 1.5),
+          borderSide: BorderSide(color: AppColors.primaryContainer, width: 1.5),
         ),
       ),
       dialogTheme: DialogThemeData(

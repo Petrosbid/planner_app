@@ -59,7 +59,7 @@ class CustomBottomNavBar extends StatelessWidget {
                     width: 42,
                     height: 42,
                     margin: const EdgeInsets.symmetric(horizontal: 4),
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       color: AppColors.primary,
                       shape: BoxShape.circle,
                     ),

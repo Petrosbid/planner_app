@@ -10,6 +10,8 @@ import '../../core/widgets/aura_charts.dart';
 import '../../core/widgets/fade_slide_in.dart';
 import '../../core/widgets/glass_card.dart';
 import '../../core/widgets/skeleton.dart';
+import '../common/block_form_sheet.dart';
+import '../common/distraction_reason_sheet.dart';
 
 class InsightsAnalyticsScreen extends StatefulWidget {
   final VoidCallback? onOpenWeeklyReview;
@@ -21,7 +23,7 @@ class InsightsAnalyticsScreen extends StatefulWidget {
 }
 
 class _InsightsAnalyticsScreenState extends State<InsightsAnalyticsScreen> with SimulatedFetchMixin {
-  static const _categoryColors = [
+  static final _categoryColors = [
     AppColors.primary,
     AppColors.success,
     AppColors.warning,
@@ -39,7 +41,10 @@ class _InsightsAnalyticsScreenState extends State<InsightsAnalyticsScreen> with 
     final l10n = AppLocalizations.of(context);
     final store = AppScope.of(context).store;
     final isFa = l10n.isFa;
-    final hasData = store.tasks.isNotEmpty || store.focusRecords.isNotEmpty || store.blocks.isNotEmpty;
+    final hasData = store.tasks.isNotEmpty ||
+        store.focusRecords.isNotEmpty ||
+        store.blocks.isNotEmpty ||
+        store.distractions.isNotEmpty;
 
     if (isLoading) {
       return Scaffold(body: SafeArea(child: Shimmer(child: _buildSkeleton())));
@@ -74,7 +79,7 @@ class _InsightsAnalyticsScreenState extends State<InsightsAnalyticsScreen> with 
                           ),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.rate_review_outlined, color: AppColors.primary),
+                          icon: Icon(Icons.rate_review_outlined, color: AppColors.primary),
                           onPressed: widget.onOpenWeeklyReview,
                         ),
                       ],
@@ -98,7 +103,7 @@ class _InsightsAnalyticsScreenState extends State<InsightsAnalyticsScreen> with 
                                   duration: const Duration(milliseconds: 700),
                                   builder: (context, v, _) => Text(
                                     '${ZedDateUtils.toFaDigits(v.round(), fa: isFa)}٪',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 26,
                                       fontWeight: FontWeight.bold,
                                       color: AppColors.primary,
@@ -121,7 +126,7 @@ class _InsightsAnalyticsScreenState extends State<InsightsAnalyticsScreen> with 
                                   duration: const Duration(milliseconds: 700),
                                   builder: (context, v, _) => Text(
                                     '${ZedDateUtils.toFaDigits(v.round(), fa: isFa)}٪',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 26,
                                       fontWeight: FontWeight.bold,
                                       color: AppColors.success,
@@ -169,8 +174,115 @@ class _InsightsAnalyticsScreenState extends State<InsightsAnalyticsScreen> with 
                       ),
                     ),
                   ),
+                  const SizedBox(height: 20),
+
+                  // Weekly distractions: per-day counts + top reasons
+                  FadeSlideIn(
+                    delay: const Duration(milliseconds: 320),
+                    child: _weeklyDistractionsCard(l10n, store, isFa),
+                  ),
                 ],
               ),
+      ),
+    );
+  }
+
+  Widget _weeklyDistractionsCard(AppLocalizations l10n, PlannerStore store, bool isFa) {
+    final counts = store.distractionCountsLast7Days;
+    final total = counts.fold<int>(0, (a, b) => a + b);
+    final reasonCounts = store.weeklyReasonCounts;
+    final maxCount = reasonCounts.isEmpty ? 1 : reasonCounts.first.value;
+
+    return GlassCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: AppColors.warning.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.notifications_paused_outlined, size: 18, color: AppColors.warning),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(l10n.translate('weeklyDistractions'), style: AppTypography.headlineMd()),
+              ),
+              Text(
+                ZedDateUtils.toFaDigits(total, fa: isFa),
+                style: AppTypography.numericMd(color: total > 0 ? AppColors.warning : AppColors.success),
+              ),
+            ],
+          ),
+          if (total == 0) ...[
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                const Icon(Icons.emoji_events_rounded, size: 16, color: AppColors.success),
+                const SizedBox(width: 8),
+                Expanded(child: Text(l10n.translate('noDistractions'), style: AppTypography.bodySm())),
+              ],
+            ),
+          ] else ...[
+            const SizedBox(height: 16),
+            SimpleBarChart(
+              values: [for (final c in counts) c.toDouble()],
+              labels: [
+                for (var i = 6; i >= 0; i--)
+                  ZedDateUtils.weekday(
+                    DateTime.now().subtract(Duration(days: i)),
+                    fa: isFa,
+                    short: true,
+                  ),
+              ],
+              barColor: AppColors.warning,
+            ),
+            const SizedBox(height: 20),
+            Text(l10n.translate('topReasons'), style: AppTypography.labelCaps()),
+            const SizedBox(height: 10),
+            for (final entry in reasonCounts.take(5))
+              Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            DistractionReasonSheet.reasonLabel(entry.key, l10n),
+                            style: AppTypography.bodySm(),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '${ZedDateUtils.toFaDigits(entry.value, fa: isFa)} ${l10n.translate('times')}',
+                          style: AppTypography.bodySm(),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: entry.value / maxCount,
+                        minHeight: 6,
+                        backgroundColor: AppColors.surfaceContainerHigh,
+                        valueColor: const AlwaysStoppedAnimation<Color>(AppColors.warning),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ],
       ),
     );
   }
@@ -239,16 +351,8 @@ class _InsightsAnalyticsScreenState extends State<InsightsAnalyticsScreen> with 
     );
   }
 
-  String _categoryLabel(String key, AppLocalizations l10n) {
-    switch (key) {
-      case 'deep':
-        return l10n.translate('deepWork');
-      case 'meeting':
-        return l10n.translate('meeting');
-      default:
-        return l10n.translate('review');
-    }
-  }
+  String _categoryLabel(String key, AppLocalizations l10n) =>
+      BlockFormSheet.categoryLabel(key, l10n);
 
   // Mirrors the loaded layout so the skeleton→content transition is seamless.
   Widget _buildSkeleton() {

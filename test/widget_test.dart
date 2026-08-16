@@ -8,7 +8,7 @@ import 'package:planner_app/core/widgets/app_scope.dart';
 import 'package:planner_app/features/home/home_today_screen.dart';
 import 'package:planner_app/features/calendar/calendar_week_screen.dart';
 import 'package:planner_app/features/tasks/task_list_screen.dart';
-import 'package:planner_app/features/common/quick_create_modal.dart';
+import 'package:planner_app/features/common/block_form_sheet.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -115,7 +115,7 @@ void main() {
     await tester.pumpAndSettle();
   });
 
-  testWidgets('QuickCreateModal block type creates a real time block', (WidgetTester tester) async {
+  testWidgets('BlockFormSheet creates a real time block via the shared form', (WidgetTester tester) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('settings.onboarded', true);
     final app = AppScope(
@@ -129,22 +129,14 @@ void main() {
     );
     await tester.pumpWidget(app);
 
-    QuickCreateModal.show(tester.element(find.byType(Scaffold)));
-    await tester.pumpAndSettle();
-
-    // Switch to the time-block type and submit a title.
-    final blockChip = find.text('بلوک زمانی');
-    expect(blockChip, findsOneWidget);
-    await tester.ensureVisible(blockChip);
-    await tester.pumpAndSettle();
-    await tester.tap(blockChip, warnIfMissed: false);
+    BlockFormSheet.show(tester.element(find.byType(Scaffold)));
     await tester.pumpAndSettle();
 
     await tester.enterText(find.byType(TextField).first, 'جلسه تست');
     await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.pumpAndSettle();
 
-    final submit = find.text('افزودن بلوک زمانی');
+    final submit = find.text('ذخیره');
     await tester.ensureVisible(submit);
     await tester.pumpAndSettle();
     await tester.tap(submit, warnIfMissed: false);

@@ -74,6 +74,7 @@ class _ZedPlanAppState extends State<ZedPlanApp> {
             builder: (context, child) {
               // Resolve AppColors' theme-aware tokens for everything below.
               AppColors.brightness = Theme.of(context).brightness;
+              AppColors.seed = _settings.seedColor;
               return Directionality(
                 textDirection: _settings.locale.languageCode == 'fa'
                     ? TextDirection.rtl
@@ -103,6 +104,7 @@ class MainNavigationShell extends StatefulWidget {
 
 class _MainNavigationShellState extends State<MainNavigationShell> {
   int _currentTabIndex = 0;
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
 
   void _openTaskDetail(String taskId) {
     Navigator.of(context).push(MaterialPageRoute(builder: (_) => TaskDetailScreen(taskId: taskId)));
@@ -118,6 +120,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
         onNavigate: (route) {
           if (route == 'tasks') setState(() => _currentTabIndex = 2);
           if (route == 'calendar') setState(() => _currentTabIndex = 1);
+          if (route == 'habits') _openScreen(const HabitsConsistencyScreen());
         },
         onOpenProfile: () => _openScreen(const ProfileScreen()),
       ),
@@ -132,6 +135,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
     ];
 
     return Scaffold(
+      key: _scaffoldKey,
       drawer: _buildAppDrawer(l10n),
       body: IndexedStack(
         index: _currentTabIndex,
@@ -151,7 +155,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
         padding: EdgeInsets.zero,
         children: [
           DrawerHeader(
-            decoration: const BoxDecoration(color: AppColors.primary),
+            decoration: BoxDecoration(color: AppColors.primary),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
@@ -219,7 +223,9 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
   }
 
   void _openScreen(Widget screen) {
-    Navigator.pop(context);
+    // Close the drawer first when this is triggered from it.
+    final scaffold = _scaffoldKey.currentState;
+    if (scaffold?.isDrawerOpen ?? false) scaffold!.closeDrawer();
     Navigator.of(context).push(MaterialPageRoute(builder: (_) => screen));
   }
 }

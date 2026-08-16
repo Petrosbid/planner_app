@@ -7,8 +7,8 @@ import 'widgets/focus_timer_ring.dart';
 import 'widgets/focus_mode_selector.dart';
 import 'widgets/focus_task_card.dart';
 import 'widgets/ambient_sound_sheet.dart';
-import 'widgets/focus_interruption_dialog.dart';
 import 'widgets/focus_completion_dialog.dart';
+import '../common/distraction_reason_sheet.dart';
 
 class FocusSessionScreen extends StatefulWidget {
   final String taskTitle;
@@ -179,19 +179,11 @@ class _FocusSessionScreenState extends State<FocusSessionScreen> {
   }
 
   void _logInterruption() {
-    FocusInterruptionDialog.show(
+    setState(() => _interruptions++);
+    // The shared sheet persists the distraction (reason + related task).
+    DistractionReasonSheet.show(
       context,
-      currentCount: _interruptions,
-      onLogged: (reason) {
-        setState(() => _interruptions++);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('حواس‌پرتی ثبت شد: $reason (مجموع: $_interruptions)'),
-            duration: const Duration(seconds: 2),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      },
+      relatedTitle: _activeTaskTitle.isEmpty ? null : _activeTaskTitle,
     );
   }
 
@@ -230,6 +222,9 @@ class _FocusSessionScreenState extends State<FocusSessionScreen> {
       },
     );
   }
+
+  /// Preset color with pomodoro following the app's theme color.
+  Color get _modeColor => _currentMode.color ?? AppColors.primary;
 
   String _formatPersianDigits(String input) {
     const englishDigits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
@@ -311,7 +306,7 @@ class _FocusSessionScreenState extends State<FocusSessionScreen> {
                             totalSeconds: totalSeconds,
                             isRunning: _isRunning,
                             modeName: _currentMode.title,
-                            primaryColor: _currentMode.color,
+                            primaryColor: _modeColor,
                             onAddMinute: _addMinute,
                             onSubtractMinute: _subtractMinute,
                             isZenMode: _isZenMode,
@@ -367,20 +362,20 @@ class _FocusSessionScreenState extends State<FocusSessionScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: _currentMode.color.withValues(alpha: 0.12),
+              color: _modeColor.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.self_improvement_rounded, size: 15, color: _currentMode.color),
+                Icon(Icons.self_improvement_rounded, size: 15, color: _modeColor),
                 const SizedBox(width: 4),
                 Text(
                   'کار عمیق',
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
-                    color: _currentMode.color,
+                    color: _modeColor,
                   ),
                 ),
               ],
@@ -548,10 +543,10 @@ class _FocusSessionScreenState extends State<FocusSessionScreen> {
             height: 72,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: _currentMode.color,
+              color: _modeColor,
               boxShadow: [
                 BoxShadow(
-                  color: _currentMode.color.withValues(alpha: 0.4),
+                  color: _modeColor.withValues(alpha: 0.4),
                   blurRadius: _isRunning ? 18 : 10,
                   spreadRadius: _isRunning ? 2 : 0,
                   offset: const Offset(0, 4),

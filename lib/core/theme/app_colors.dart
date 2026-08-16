@@ -2,32 +2,45 @@ import 'package:flutter/material.dart';
 
 /// Color tokens from /ui/aura/DESIGN.md.
 ///
-/// Brand and status colors are theme-independent constants. Neutral/surface
-/// tokens resolve against the current brightness, which the app root sets via
-/// [AppColors.brightness] in the MaterialApp builder — screens keep using
-/// `AppColors.surface` etc. and get correct dark values for free.
+/// Brand and status colors are constants — except the primary family, which
+/// derives from a user-pickable [seed] (set by the app root alongside
+/// [brightness]). Neutral/surface tokens resolve against the current
+/// brightness. Screens keep using `AppColors.primary` etc. and get the
+/// user's theme for free.
 class AppColors {
   AppColors._();
 
-  // ---------- brightness resolution ----------
+  // ---------- brightness & seed resolution ----------
 
   static Brightness _brightness = Brightness.light;
+  static int _seed = 0xFF3C51C2; // ZedPlan blue
 
   /// Set once per build by the app root; defaults to light.
   static set brightness(Brightness b) => _brightness = b;
 
+  /// Brand seed (ARGB) chosen by the user; primary tones derive from it.
+  static set seed(int argb) => _seed = argb;
+
   static bool get _dark => _brightness == Brightness.dark;
 
-  // ---------- Primary & Tints (theme-independent) ----------
+  static Color _withLightness(Color c, double lightness) {
+    final hsl = HSLColor.fromColor(c);
+    return hsl.withLightness(lightness.clamp(0.0, 1.0)).toColor();
+  }
 
-  static const Color primary = Color(0xFF3C51C2);
+  // ---------- Primary & tints (seed-driven) ----------
+
+  /// The ZedPlan blue used as the default seed.
+  static const int defaultSeed = 0xFF3C51C2;
+
+  static Color get primary => Color(_seed);
   static const Color onPrimary = Color(0xFFFFFFFF);
-  static const Color primaryContainer = Color(0xFF566BDC);
+  static Color get primaryContainer => _withLightness(Color(_seed), (_dark ? 0.30 : 0.52));
   static const Color onPrimaryContainer = Color(0xFFFFFBFF);
-  static const Color primaryFixed = Color(0xFFDEE0FF);
-  static const Color onPrimaryFixed = Color(0xFF00105C);
-  static const Color primaryFixedDim = Color(0xFFBAC3FF);
-  static const Color surfaceTint = Color(0xFF3F53C4);
+  static Color get primaryFixed => _withLightness(Color(_seed), 0.90);
+  static Color get onPrimaryFixed => _withLightness(Color(_seed), 0.16);
+  static Color get primaryFixedDim => _withLightness(Color(_seed), 0.76);
+  static Color get surfaceTint => primary;
 
   // ---------- Secondary & Neutral accents ----------
 

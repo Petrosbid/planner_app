@@ -9,6 +9,7 @@ import '../../core/widgets/app_scope.dart';
 import '../../core/widgets/fade_slide_in.dart';
 import '../../core/widgets/glass_card.dart';
 import '../../data/models/planner_models.dart';
+import '../common/distraction_reason_sheet.dart';
 
 /// Detail view for a single real task, resolved from the store by [taskId].
 class TaskDetailScreen extends StatefulWidget {
@@ -136,7 +137,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.edit_outlined, size: 20, color: AppColors.primary),
+                icon: Icon(Icons.edit_outlined, size: 20, color: AppColors.primary),
                 tooltip: l10n.translate('editTaskTitle'),
                 onPressed: () => _showEditTitleDialog(l10n, store, task),
               ),
@@ -179,6 +180,21 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
           Text(l10n.translate('startTimeLabel'), style: AppTypography.labelCaps()),
           const SizedBox(height: 8),
           Text(ZedDateUtils.fullDate(task.createdAt, fa: isFa, jalali: useJalali), style: AppTypography.bodyLg()),
+          const SizedBox(height: 16),
+          if (!task.isCompleted)
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () => DistractionReasonSheet.show(context, relatedTitle: task.title),
+                icon: const Icon(Icons.notifications_paused_outlined, size: 18),
+                label: Text(l10n.translate('recordNotDoneReason')),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.warning,
+                  side: BorderSide(color: AppColors.warning.withValues(alpha: 0.5)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+              ),
+            ),
         ],
       ),
     );

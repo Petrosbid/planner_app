@@ -76,7 +76,7 @@ class FocusTaskCard extends StatelessWidget {
                 autofocus: true,
                 decoration: InputDecoration(
                   hintText: 'عنوان وظیفه را بنویسید...',
-                  prefixIcon: const Icon(Icons.bolt_rounded, color: AppColors.primary),
+                  prefixIcon: Icon(Icons.bolt_rounded, color: AppColors.primary),
                   filled: true,
                   fillColor: isDark
                       ? AppColors.darkSurfaceContainerLow

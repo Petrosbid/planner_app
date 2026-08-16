@@ -78,7 +78,7 @@ class DonutChartWidget extends StatelessWidget {
           Text(
             centerText,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
               color: AppColors.primary,
@@ -132,13 +132,13 @@ class _DonutPainter extends CustomPainter {
 class SimpleBarChart extends StatelessWidget {
   final List<double> values;
   final List<String> labels;
-  final Color barColor;
+  final Color? barColor;
 
   const SimpleBarChart({
     super.key,
     required this.values,
     required this.labels,
-    this.barColor = AppColors.primary,
+    this.barColor,
   });
 
   @override
@@ -159,7 +159,7 @@ class SimpleBarChart extends StatelessWidget {
                 width: 16,
                 height: 80 * heightFactor.clamp(0.1, 1.0),
                 decoration: BoxDecoration(
-                  color: barColor,
+                  color: barColor ?? AppColors.primary,
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),

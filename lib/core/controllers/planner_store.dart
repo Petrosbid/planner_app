@@ -23,6 +23,17 @@ class PlannerStore extends ChangeNotifier {
   static const _kProjects = 'store.projects';
   static const _kFocus = 'store.focus';
   static const _kReviews = 'store.reviews';
+  static const _kCategories = 'store.categories';
+  static const _kDistractions = 'store.distractions';
+  static const _kReasons = 'store.distractionReasons';
+
+  /// Built-in time-block categories; users can add their own.
+  static const builtInCategories = ['deep', 'meeting', 'review'];
+
+  /// Built-in distraction / not-done reason keys; users can add their own.
+  static const builtInReasons = [
+    'phone', 'lowEnergy', 'environment', 'unexpected', 'clarity', 'motivation', 'other',
+  ];
 
   final SharedPreferences _prefs;
 
@@ -34,6 +45,9 @@ class PlannerStore extends ChangeNotifier {
   final List<ProjectItem> _projects = [];
   final List<FocusRecord> _focusRecords = [];
   final List<DailyReviewRecord> _reviews = [];
+  final List<String> _customCategories = [];
+  final List<DistractionRecord> _distractions = [];
+  final List<String> _customReasons = [];
 
   PlannerStore(this._prefs) {
     _loadAll();
@@ -50,6 +64,9 @@ class PlannerStore extends ChangeNotifier {
     _projects.addAll(_read<ProjectItem>(_kProjects, ProjectItem.fromMap));
     _focusRecords.addAll(_read<FocusRecord>(_kFocus, FocusRecord.fromMap));
     _reviews.addAll(_read<DailyReviewRecord>(_kReviews, DailyReviewRecord.fromMap));
+    _customCategories.addAll(((_prefs.getStringList(_kCategories) ?? [])));
+    _distractions.addAll(_read<DistractionRecord>(_kDistractions, DistractionRecord.fromMap));
+    _customReasons.addAll((_prefs.getStringList(_kReasons) ?? []));
   }
 
   List<T> _read<T>(String key, T Function(Map<String, dynamic>) fromMap) {
@@ -77,6 +94,7 @@ class PlannerStore extends ChangeNotifier {
   List<ProjectItem> get projects => List.unmodifiable(_projects);
   List<FocusRecord> get focusRecords => List.unmodifiable(_focusRecords);
   List<DailyReviewRecord> get reviews => List.unmodifiable(_reviews);
+  List<DistractionRecord> get distractions => List.unmodifiable(_distractions);
 
   TaskItem? taskById(String id) {
     for (final t in _tasks) {
@@ -166,6 +184,11 @@ class PlannerStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> toggleBlockDone(TimeBlockItem block) async {
+    block.isDone = !block.isDone;
+    await updateBlock(block);
+  }
+
   Future<void> deleteBlock(TimeBlockItem block) async {
     _blocks.remove(block);
     await _write(_kBlocks, _blocks, (b) => b.toMap());
@@ -177,6 +200,63 @@ class PlannerStore extends ChangeNotifier {
 
   double plannedHoursForDay(DateTime date) => blocksForDay(date)
       .fold(0.0, (sum, b) => sum + b.durationHours);
+
+  /// Returns the conflicting block's title when [startHour, startHour + durationHours)
+  /// overlaps an existing block on [date]; null when the range is free.
+  /// Ranges that merely touch (end == next start) are allowed.
+  TimeBlockItem? conflictingBlock(DateTime date, double startHour, double durationHours) {
+    for (final b in blocksForDay(date)) {
+      final bs = b.startHour;
+      final be = b.startHour + b.durationHours;
+      final ns = startHour;
+      final ne = startHour + durationHours;
+      if (ns < be && bs < ne) return b;
+    }
+    return null;
+  }
+
+  // ---------- custom categories ----------
+
+  List<String> get customCategories => List.unmodifiable(_customCategories);
+
+  /// All selectable categories: built-ins first, then the user's own.
+  List<String> get allCategories => [...builtInCategories, ..._customCategories];
+
+  /// Adds [name] if it is non-empty and not already known (case-insensitive).
+  /// Returns true when the category was added.
+  Future<bool> addCustomCategory(String name) async {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) return false;
+    final lower = trimmed.toLowerCase();
+    final clash = allCategories.any((c) => c.toLowerCase() == lower);
+    if (clash) return false;
+    _customCategories.add(trimmed);
+    await _prefs.setStringList(_kCategories, _customCategories);
+    notifyListeners();
+    return true;
+  }
+
+  /// Stable color for a category; built-ins map to brand colors, custom ones
+  /// cycle through a fixed palette so each gets a consistent identity.
+  static int categoryColor(String category) {
+    switch (category) {
+      case 'deep':
+        return 0xFF3C51C2; // AppColors.primary
+      case 'meeting':
+        return 0xFF10B981; // AppColors.success
+      case 'review':
+        return 0xFFF59E0B; // AppColors.warning
+      default:
+        const palette = [
+          0xFF8B5CF6, 0xFF14B8A6, 0xFFEC4899, 0xFF6366F1, 0xFFEA580C, 0xFF65A30D,
+        ];
+        var hash = 0;
+        for (final code in category.codeUnits) {
+          hash = (hash * 31 + code) & 0x7FFFFFFF;
+        }
+        return palette[hash % palette.length];
+    }
+  }
 
   // ---------- habits ----------
 
@@ -253,24 +333,28 @@ class PlannerStore extends ChangeNotifier {
     return goal;
   }
 
+  Future<void> updateGoal(GoalItem goal) async {
+    await _write(_kGoals, _goals, (g) => g.toMap());
+    notifyListeners();
+  }
+
   Future<void> deleteGoal(GoalItem goal) async {
     _goals.remove(goal);
     await _write(_kGoals, _goals, (g) => g.toMap());
     notifyListeners();
   }
 
-  Future<void> updateGoalProgress(GoalItem goal, double progress) async {
-    goal.progress = progress.clamp(0.0, 1.0);
-    await _write(_kGoals, _goals, (g) => g.toMap());
-    notifyListeners();
-  }
-
-  Future<ProjectItem> addProject({required String title}) async {
-    final project = ProjectItem(id: _uuid.v4(), title: title);
+  Future<ProjectItem> addProject({required String title, String description = ''}) async {
+    final project = ProjectItem(id: _uuid.v4(), title: title, description: description);
     _projects.add(project);
     await _write(_kProjects, _projects, (p) => p.toMap());
     notifyListeners();
     return project;
+  }
+
+  Future<void> updateProject(ProjectItem project) async {
+    await _write(_kProjects, _projects, (p) => p.toMap());
+    notifyListeners();
   }
 
   Future<void> deleteProject(ProjectItem project) async {
@@ -279,18 +363,72 @@ class PlannerStore extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> updateProjectProgress(ProjectItem project, double progress) async {
-    project.progress = progress.clamp(0.0, 1.0);
-    await _write(_kProjects, _projects, (p) => p.toMap());
+  // ---------- distractions / not-done reasons ----------
+
+  /// All selectable reasons: built-in keys first, then the user's own.
+  List<String> get allReasons => [...builtInReasons, ..._customReasons];
+
+  List<String> get customReasons => List.unmodifiable(_customReasons);
+
+  /// Adds [name] if non-empty and not already known (case-insensitive).
+  Future<bool> addCustomReason(String name) async {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) return false;
+    final lower = trimmed.toLowerCase();
+    if (allReasons.any((r) => r.toLowerCase() == lower)) return false;
+    _customReasons.add(trimmed);
+    await _prefs.setStringList(_kReasons, _customReasons);
     notifyListeners();
+    return true;
+  }
+
+  Future<void> addDistraction({required String reason, String? relatedTitle}) async {
+    _distractions.add(DistractionRecord(
+      id: _uuid.v4(),
+      at: DateTime.now(),
+      reason: reason,
+      relatedTitle: relatedTitle,
+    ));
+    await _write(_kDistractions, _distractions, (d) => d.toMap());
+    notifyListeners();
+  }
+
+  List<DistractionRecord> get todayDistractions =>
+      _distractions.where((d) => _sameDay(d.at, DateTime.now())).toList();
+
+  /// Distraction counts per day, oldest → newest, for the last 7 days.
+  List<int> get distractionCountsLast7Days {
+    final result = <int>[];
+    for (var i = 6; i >= 0; i--) {
+      final day = DateTime.now().subtract(Duration(days: i));
+      result.add(_distractions.where((d) => _sameDay(d.at, day)).length);
+    }
+    return result;
+  }
+
+  /// Reason → count over the last 7 days, most frequent first.
+  List<MapEntry<String, int>> get weeklyReasonCounts {
+    final cutoff = DateTime.now().subtract(const Duration(days: 7));
+    final counts = <String, int>{};
+    for (final d in _distractions.where((d) => d.at.isAfter(cutoff))) {
+      counts[d.reason] = (counts[d.reason] ?? 0) + 1;
+    }
+    final entries = counts.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+    return entries;
   }
 
   // ---------- focus ----------
 
-  Future<void> recordFocus({required int minutes, int interruptions = 0, String? taskTitle}) async {
+  Future<void> recordFocus({
+    required int minutes,
+    int interruptions = 0,
+    String? taskTitle,
+    DateTime? at,
+  }) async {
+    final end = at ?? DateTime.now();
     _focusRecords.add(FocusRecord(
       id: _uuid.v4(),
-      startedAt: DateTime.now().subtract(Duration(minutes: minutes)),
+      startedAt: end.subtract(Duration(minutes: minutes)),
       minutes: minutes,
       interruptions: interruptions,
       taskTitle: taskTitle,
@@ -366,7 +504,13 @@ class PlannerStore extends ChangeNotifier {
     _projects.clear();
     _focusRecords.clear();
     _reviews.clear();
-    for (final key in [_kTasks, _kBlocks, _kHabits, _kNotes, _kGoals, _kProjects, _kFocus, _kReviews]) {
+    _customCategories.clear();
+    _distractions.clear();
+    _customReasons.clear();
+    for (final key in [
+      _kTasks, _kBlocks, _kHabits, _kNotes, _kGoals, _kProjects, _kFocus, _kReviews, _kCategories,
+      _kDistractions, _kReasons,
+    ]) {
       await _prefs.remove(key);
     }
     notifyListeners();

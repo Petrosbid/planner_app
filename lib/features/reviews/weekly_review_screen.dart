@@ -8,6 +8,7 @@ import '../../core/widgets/app_scope.dart';
 import '../../core/widgets/aura_charts.dart';
 import '../../core/widgets/fade_slide_in.dart';
 import '../../core/widgets/glass_card.dart';
+import '../common/distraction_reason_sheet.dart';
 
 class WeeklyReviewScreen extends StatefulWidget {
   const WeeklyReviewScreen({super.key});
@@ -102,6 +103,41 @@ class _WeeklyReviewScreenState extends State<WeeklyReviewScreen> {
                       ),
                     ),
                   ),
+                  if (store.distractions.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    FadeSlideIn(
+                      delay: const Duration(milliseconds: 220),
+                      child: GlassCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(Icons.notifications_paused_outlined, size: 18, color: AppColors.warning),
+                                const SizedBox(width: 8),
+                                Text(l10n.translate('weeklyDistractions'), style: AppTypography.headlineMd()),
+                                const Spacer(),
+                                Text(
+                                  ZedDateUtils.toFaDigits(
+                                    store.distractionCountsLast7Days.fold<int>(0, (a, b) => a + b),
+                                    fa: isFa,
+                                  ),
+                                  style: AppTypography.numericMd(color: AppColors.warning),
+                                ),
+                              ],
+                            ),
+                            if (store.weeklyReasonCounts.isNotEmpty) ...[
+                              const SizedBox(height: 8),
+                              Text(
+                                '${l10n.translate('topReasons')}: ${DistractionReasonSheet.reasonLabel(store.weeklyReasonCounts.first.key, l10n)}',
+                                style: AppTypography.bodySm(),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
       ),

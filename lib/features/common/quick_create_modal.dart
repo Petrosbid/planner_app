@@ -3,20 +3,24 @@ import 'package:flutter/material.dart';
 import '../../core/localization/app_localizations.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
-import '../../core/utils/date_utils.dart';
 import '../../core/widgets/app_scope.dart';
 import '../../core/widgets/fade_slide_in.dart';
+import 'block_form_sheet.dart';
 
 /// Global quick-create sheet. Writes straight to the [PlannerStore].
+/// The time-block type hands off to [BlockFormSheet] (24h + categories +
+/// conflict validation), so this sheet stays for instant items.
 class QuickCreateModal extends StatefulWidget {
-  const QuickCreateModal({super.key});
+  final BuildContext openerContext;
+
+  const QuickCreateModal({super.key, required this.openerContext});
 
   static void show(BuildContext context) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => const QuickCreateModal(),
+      builder: (_) => QuickCreateModal(openerContext: context),
     );
   }
 
@@ -25,24 +29,32 @@ class QuickCreateModal extends StatefulWidget {
 }
 
 class _QuickCreateModalState extends State<QuickCreateModal> {
-  String _selectedType = 'task'; // task, habit, goal, project, note, block
+  String _selectedType = 'task'; // task, habit, goal, project, note
   final _titleController = TextEditingController();
   final _descController = TextEditingController();
-  int _estimatedMinutes = 30;
+  final _estimateController = TextEditingController(text: '30');
   bool _isCommitment = false;
   int _priority = 1; // 0 low, 1 medium, 2 high
 
-  // Time block options
-  DateTime _blockDate = DateTime.now();
-  double _blockStart = 9;
-  double _blockDuration = 1;
-  String _blockCategory = 'deep'; // deep | meeting | review
+  static const _estimatePresets = [15, 30, 45, 60, 90, 120];
 
   @override
   void dispose() {
     _titleController.dispose();
     _descController.dispose();
+    _estimateController.dispose();
     super.dispose();
+  }
+
+  /// Accepts Persian and Arabic-Indic digits.
+  int? _parseMinutes(String input) {
+    const fa = '۰۱۲۳۴۵۶۷۸۹';
+    const ar = '٠١٢٣٤٥٦٧٨٩';
+    var normalized = input.trim();
+    for (var i = 0; i < 10; i++) {
+      normalized = normalized.replaceAll(fa[i], '$i').replaceAll(ar[i], '$i');
+    }
+    return int.tryParse(normalized);
   }
 
   Future<void> _submit() async {
@@ -52,6 +64,18 @@ class _QuickCreateModalState extends State<QuickCreateModal> {
     final store = AppScope.of(context).store;
     final l10n = AppLocalizations.of(context);
 
+    int estimated = 30;
+    if (_selectedType == 'task') {
+      final parsed = _parseMinutes(_estimateController.text);
+      if (parsed == null || parsed <= 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.translate('invalidEstimate'))),
+        );
+        return;
+      }
+      estimated = parsed;
+    }
+
     switch (_selectedType) {
       case 'habit':
         await store.addHabit(title: title);
@@ -60,27 +84,17 @@ class _QuickCreateModalState extends State<QuickCreateModal> {
         await store.addGoal(title: title, description: _descController.text.trim());
         break;
       case 'project':
-        await store.addProject(title: title);
+        await store.addProject(title: title, description: _descController.text.trim());
         break;
       case 'note':
         await store.addNote(title: title, body: _descController.text.trim());
-        break;
-      case 'block':
-        await store.addBlock(
-          title: title,
-          date: _blockDate,
-          startHour: _blockStart,
-          durationHours: _blockDuration,
-          colorValue: _blockColor().toARGB32(),
-          category: _blockCategory,
-        );
         break;
       default:
         await store.addTask(
           title: title,
           description: _descController.text.trim(),
           priority: _priority,
-          estimatedMinutes: _estimatedMinutes,
+          estimatedMinutes: estimated,
           isCommitment: _isCommitment,
         );
     }
@@ -88,30 +102,14 @@ class _QuickCreateModalState extends State<QuickCreateModal> {
     if (!mounted) return;
     Navigator.of(context).pop();
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          _selectedType == 'block' ? l10n.translate('blockAdded') : '${l10n.translate('add')}: $title',
-        ),
-      ),
+      SnackBar(content: Text('${l10n.translate('add')}: $title')),
     );
-  }
-
-  Color _blockColor() {
-    switch (_blockCategory) {
-      case 'meeting':
-        return AppColors.success;
-      case 'review':
-        return AppColors.warning;
-      default:
-        return AppColors.primary;
-    }
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-    final isFa = l10n.isFa;
 
     return Container(
       padding: EdgeInsets.only(left: 20, right: 20, top: 20, bottom: bottomInset + 24),
@@ -165,99 +163,8 @@ class _QuickCreateModalState extends State<QuickCreateModal> {
               ),
               const SizedBox(height: 12),
 
-              // Time block options: day, start hour, duration, category
-              if (_selectedType == 'block') ...[
-                Text(l10n.translate('dateLabel'), style: AppTypography.labelCaps()),
-                const SizedBox(height: 8),
-                SizedBox(
-                  height: 64,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: 7,
-                    separatorBuilder: (_, __) => const SizedBox(width: 8),
-                    itemBuilder: (ctx, i) {
-                      final day = DateTime.now().add(Duration(days: i));
-                      final selected = ZedDateUtils.isSameDay(day, _blockDate);
-                      final useJalali = AppScope.of(context).settings.useJalali;
-                      return GestureDetector(
-                        onTap: () => setState(() => _blockDate = day),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          width: 56,
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          decoration: BoxDecoration(
-                            color: selected ? AppColors.primary : AppColors.surfaceContainerLow,
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                i == 0
-                                    ? l10n.translate('today')
-                                    : ZedDateUtils.weekday(day, fa: l10n.isFa, short: true),
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: selected ? Colors.white : AppColors.onSurfaceVariant,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                ZedDateUtils.dayNumber(day, fa: l10n.isFa, jalali: useJalali),
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.bold,
-                                  color: selected ? Colors.white : AppColors.onSurface,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  '${l10n.translate('startTimeLabel')}: ${ZedDateUtils.hourLabel(_blockStart, fa: l10n.isFa)}',
-                  style: AppTypography.bodySm(),
-                ),
-                Slider(
-                  value: _blockStart,
-                  min: 8,
-                  max: 20,
-                  divisions: 24,
-                  onChanged: (v) => setState(() => _blockStart = v),
-                ),
-                Text(
-                  '${l10n.translate('durationLabel')}: ${ZedDateUtils.toFaDigits(_blockDuration, fa: l10n.isFa)} ${l10n.translate('hoursUnit')}',
-                  style: AppTypography.bodySm(),
-                ),
-                Slider(
-                  value: _blockDuration,
-                  min: 0.5,
-                  max: 4,
-                  divisions: 7,
-                  onChanged: (v) => setState(() => _blockDuration = v),
-                ),
-                Wrap(
-                  spacing: 8,
-                  children: [
-                    for (final c in ['deep', 'meeting', 'review'])
-                      ChoiceChip(
-                        label: Text(_categoryLabel(c, l10n)),
-                        selected: _blockCategory == c,
-                        selectedColor: AppColors.primary,
-                        showCheckmark: false,
-                        onSelected: (_) => setState(() => _blockCategory = c),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-              ],
-
-              // Description (task/goal/note)
-              if (_selectedType == 'task' || _selectedType == 'goal' || _selectedType == 'note') ...[
+              // Description (task/goal/project/note)
+              if (_selectedType != 'habit') ...[
                 TextField(
                   controller: _descController,
                   maxLines: 2,
@@ -269,25 +176,36 @@ class _QuickCreateModalState extends State<QuickCreateModal> {
                 const SizedBox(height: 12),
               ],
 
-              // Task options
+              // Task options: custom estimate + priority + commitment
               if (_selectedType == 'task') ...[
+                Text(l10n.translate('estimatedLabel'), style: AppTypography.labelCaps()),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _estimateController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    hintText: l10n.translate('estimateHint'),
+                    suffixText: l10n.minutes,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    for (final preset in _estimatePresets)
+                      ActionChip(
+                        label: Text('$preset'),
+                        labelStyle: const TextStyle(fontSize: 12),
+                        onPressed: () => setState(() => _estimateController.text = '$preset'),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 12),
                 Row(
                   children: [
-                    Expanded(
-                      child: DropdownButtonFormField<int>(
-                        initialValue: _estimatedMinutes,
-                        decoration: InputDecoration(labelText: l10n.translate('estimatedLabel')),
-                        items: [
-                          DropdownMenuItem(value: 15, child: Text('۱۵ ${l10n.minutes}')),
-                          DropdownMenuItem(value: 30, child: Text('۳۰ ${l10n.minutes}')),
-                          DropdownMenuItem(value: 60, child: Text('۱ ${l10n.hours}')),
-                          DropdownMenuItem(value: 90, child: Text('۹۰ ${l10n.minutes}')),
-                          DropdownMenuItem(value: 120, child: Text('۲ ${l10n.hours}')),
-                        ],
-                        onChanged: (val) => setState(() => _estimatedMinutes = val ?? 30),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
                     Expanded(
                       child: DropdownButtonFormField<int>(
                         initialValue: _priority,
@@ -300,16 +218,18 @@ class _QuickCreateModalState extends State<QuickCreateModal> {
                         onChanged: (val) => setState(() => _priority = val ?? 1),
                       ),
                     ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: FilterChip(
+                        label: Text(_isCommitment
+                            ? l10n.translate('topCommitments')
+                            : l10n.translate('filterPending')),
+                        selected: _isCommitment,
+                        onSelected: (val) => setState(() => _isCommitment = val),
+                        selectedColor: AppColors.primaryContainer.withValues(alpha: 0.3),
+                      ),
+                    ),
                   ],
-                ),
-                const SizedBox(height: 12),
-                FilterChip(
-                  label: Text(_isCommitment
-                      ? l10n.translate('topCommitments')
-                      : l10n.translate('filterPending')),
-                  selected: _isCommitment,
-                  onSelected: (val) => setState(() => _isCommitment = val),
-                  selectedColor: AppColors.primaryContainer.withValues(alpha: 0.3),
                 ),
                 const SizedBox(height: 12),
               ],
@@ -319,7 +239,7 @@ class _QuickCreateModalState extends State<QuickCreateModal> {
                 height: 50,
                 child: FilledButton(
                   onPressed: _submit,
-                  child: Text('${l10n.translate('add')} ${_submitLabelFor(l10n, isFa)}'),
+                  child: Text('${l10n.translate('add')} ${_submitLabelFor(l10n)}'),
                 ),
               ),
             ],
@@ -329,7 +249,7 @@ class _QuickCreateModalState extends State<QuickCreateModal> {
     );
   }
 
-  String _submitLabelFor(AppLocalizations l10n, bool isFa) {
+  String _submitLabelFor(AppLocalizations l10n) {
     switch (_selectedType) {
       case 'habit':
         return l10n.habits;
@@ -339,8 +259,6 @@ class _QuickCreateModalState extends State<QuickCreateModal> {
         return l10n.projects;
       case 'note':
         return l10n.notes;
-      case 'block':
-        return l10n.translate('timeBlock');
       default:
         return l10n.tasks;
     }
@@ -356,21 +274,8 @@ class _QuickCreateModalState extends State<QuickCreateModal> {
         return l10n.translate('projectTitleHint');
       case 'note':
         return l10n.translate('noteTitleHint');
-      case 'block':
-        return l10n.translate('blockTitleHint');
       default:
         return l10n.translate('taskTitleHint');
-    }
-  }
-
-  String _categoryLabel(String key, AppLocalizations l10n) {
-    switch (key) {
-      case 'deep':
-        return l10n.translate('deepWork');
-      case 'meeting':
-        return l10n.translate('meeting');
-      default:
-        return l10n.translate('review');
     }
   }
 
@@ -393,7 +298,14 @@ class _QuickCreateModalState extends State<QuickCreateModal> {
           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
         ),
         onSelected: (sel) {
-          if (sel) setState(() => _selectedType = type);
+          if (!sel) return;
+          if (type == 'block') {
+            // Hand off to the dedicated block form via the screen that opened us.
+            Navigator.of(context).pop();
+            BlockFormSheet.show(widget.openerContext);
+            return;
+          }
+          setState(() => _selectedType = type);
         },
       ),
     );

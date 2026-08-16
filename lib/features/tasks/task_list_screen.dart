@@ -41,7 +41,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
                     child: Text(l10n.translate('tasksTitle'), style: AppTypography.headlineLgMobile(color: AppColors.primary)),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.add_rounded, color: AppColors.primary),
+                    icon: Icon(Icons.add_rounded, color: AppColors.primary),
                     tooltip: l10n.translate('addTask'),
                     onPressed: () => QuickCreateModal.show(context),
                   ),
@@ -179,7 +179,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
               style: TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant),
             ),
             trailing: task.isCommitment
-                ? const Icon(Icons.star_rounded, color: AppColors.primary, size: 20)
+                ? Icon(Icons.star_rounded, color: AppColors.primary, size: 20)
                 : null,
           ),
         ),

@@ -22,7 +22,7 @@ class FocusTimerRing extends StatefulWidget {
     required this.totalSeconds,
     required this.isRunning,
     required this.modeName,
-    this.primaryColor = AppColors.primary,
+    required this.primaryColor,
     this.onAddMinute,
     this.onSubtractMinute,
     this.isZenMode = false,

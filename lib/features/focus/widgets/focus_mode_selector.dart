@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 
 enum FocusPresetMode {
-  pomodoro(title: 'پومودورو', minutes: 25, icon: Icons.timer_outlined, color: AppColors.primary),
+  pomodoro(title: 'پومودورو', minutes: 25, icon: Icons.timer_outlined),
   deepWork(title: 'کار عمیق', minutes: 50, icon: Icons.bolt_rounded, color: Color(0xFF4F46E5)),
   shortBreak(title: 'استراحت کوتاه', minutes: 5, icon: Icons.coffee_rounded, color: AppColors.success),
   longBreak(title: 'استراحت بلند', minutes: 15, icon: Icons.nature_people_rounded, color: Color(0xFF0D9488)),
@@ -11,13 +11,15 @@ enum FocusPresetMode {
   final String title;
   final int minutes;
   final IconData icon;
-  final Color color;
+
+  /// Preset color; null means "follow the app's theme color" (pomodoro).
+  final Color? color;
 
   const FocusPresetMode({
     required this.title,
     required this.minutes,
     required this.icon,
-    required this.color,
+    this.color,
   });
 }
 
@@ -84,7 +86,7 @@ class FocusModeSelector extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 '${_formatPersianDigits(tempMinutes.toString())} دقیقه',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
                   color: AppColors.primary,
@@ -156,6 +158,8 @@ class FocusModeSelector extends StatelessWidget {
           final isSelected = selectedMode == mode;
           final duration = mode == FocusPresetMode.custom ? customMinutes : mode.minutes;
           final durationStr = _formatPersianDigits('$durationد');
+          // Null color means "follow the app theme" (pomodoro).
+          final modeColor = mode.color ?? AppColors.primary;
 
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -186,14 +190,14 @@ class FocusModeSelector extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
                       color: isSelected
-                          ? mode.color.withValues(alpha: isDark ? 0.25 : 0.12)
+                          ? modeColor.withValues(alpha: isDark ? 0.25 : 0.12)
                           : (isDark
                               ? AppColors.darkSurfaceContainerLow
                               : AppColors.surfaceContainerLowest),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
                         color: isSelected
-                            ? mode.color.withValues(alpha: 0.6)
+                            ? modeColor.withValues(alpha: 0.6)
                             : (isDark
                                 ? AppColors.darkOutlineVariant.withValues(alpha: 0.4)
                                 : AppColors.outlineVariant.withValues(alpha: 0.4)),
@@ -207,7 +211,7 @@ class FocusModeSelector extends StatelessWidget {
                           mode.icon,
                           size: 16,
                           color: isSelected
-                              ? mode.color
+                              ? modeColor
                               : (isDark
                                   ? AppColors.darkOnSurfaceVariant
                                   : AppColors.onSurfaceVariant),
@@ -219,7 +223,7 @@ class FocusModeSelector extends StatelessWidget {
                             fontSize: 12,
                             fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                             color: isSelected
-                                ? (isDark ? Colors.white : mode.color)
+                                ? (isDark ? Colors.white : modeColor)
                                 : (isDark
                                     ? AppColors.darkOnSurfaceVariant
                                     : AppColors.onSurfaceVariant),
@@ -230,7 +234,7 @@ class FocusModeSelector extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                           decoration: BoxDecoration(
                             color: isSelected
-                                ? mode.color.withValues(alpha: 0.2)
+                                ? modeColor.withValues(alpha: 0.2)
                                 : (isDark
                                     ? AppColors.darkSurfaceContainerHigh
                                     : AppColors.surfaceContainerHigh),
@@ -242,7 +246,7 @@ class FocusModeSelector extends StatelessWidget {
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
                               color: isSelected
-                                  ? mode.color
+                                  ? modeColor
                                   : (isDark
                                       ? AppColors.darkOnSurfaceVariant
                                       : AppColors.onSurfaceVariant),

@@ -104,7 +104,7 @@ class _HomeTodayScreenState extends State<HomeTodayScreen> with SimulatedFetchMi
                               backgroundColor: AppColors.primaryContainer,
                               child: Text(
                                 initials,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -137,7 +137,7 @@ class _HomeTodayScreenState extends State<HomeTodayScreen> with SimulatedFetchMi
                                 primaryColor: AppColors.primary,
                                 centerChild: Text(
                                   '${ZedDateUtils.toFaDigits(value.round(), fa: isFa)}٪',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
                                     color: AppColors.primary,
@@ -199,7 +199,7 @@ class _HomeTodayScreenState extends State<HomeTodayScreen> with SimulatedFetchMi
                                 onTap: () => widget.onNavigate('tasks'),
                                 child: Text(
                                   l10n.translate('viewAll'),
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 12,
                                     color: AppColors.primary,
                                     fontWeight: FontWeight.w600,
@@ -233,6 +233,54 @@ class _HomeTodayScreenState extends State<HomeTodayScreen> with SimulatedFetchMi
                   ),
                 ),
 
+                // Today's habits — quick check/uncheck
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  sliver: SliverToBoxAdapter(
+                    child: FadeSlideIn(
+                      delay: const Duration(milliseconds: 200),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                l10n.translate('habitsTodayTitle'),
+                                style: AppTypography.labelCaps(color: AppColors.onSurfaceVariant),
+                              ),
+                              InkWell(
+                                onTap: () => widget.onNavigate('habits'),
+                                child: Text(
+                                  l10n.translate('viewAll'),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 300),
+                            child: store.habits.isEmpty
+                                ? _miniEmpty(
+                                    Icons.autorenew,
+                                    l10n.translate('emptyHabitsTitle'),
+                                    l10n.translate('emptyHabitsMessage'),
+                                    l10n.translate('addHabit'),
+                                    () => widget.onNavigate('habits'),
+                                  )
+                                : _habitsCheckRow(l10n, store),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
                 // Timeline
                 SliverPadding(
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -253,7 +301,7 @@ class _HomeTodayScreenState extends State<HomeTodayScreen> with SimulatedFetchMi
                                 onTap: () => widget.onNavigate('calendar'),
                                 child: Text(
                                   l10n.translate('goToCalendar'),
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 12,
                                     color: AppColors.primary,
                                     fontWeight: FontWeight.w600,
@@ -296,8 +344,82 @@ class _HomeTodayScreenState extends State<HomeTodayScreen> with SimulatedFetchMi
     );
   }
 
-  Widget _miniEmpty(IconData icon, String title, String message, String action, VoidCallback onAction) {
-    return Container(
+  /// Horizontal tappable habit chips: tap to check/uncheck today's mark.
+  Widget _habitsCheckRow(AppLocalizations l10n, PlannerStore store) {
+    final habits = store.habits;
+    final allDone = habits.every(store.habitDoneToday);
+    return Column(
+      key: const ValueKey('habits-row'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          height: 44,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: habits.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 8),
+            itemBuilder: (ctx, i) {
+              final habit = habits[i];
+              final done = store.habitDoneToday(habit);
+              final color = Color(habit.colorValue);
+              return GestureDetector(
+                onTap: () => store.toggleHabitToday(habit),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  decoration: BoxDecoration(
+                    color: done ? color.withValues(alpha: 0.15) : AppColors.surfaceContainerLowest,
+                    borderRadius: BorderRadius.circular(22),
+                    border: Border.all(
+                      color: done ? color : AppColors.outlineVariant,
+                      width: done ? 1.5 : 1,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      AnimatedScale(
+                        scale: done ? 1.1 : 1.0,
+                        duration: const Duration(milliseconds: 150),
+                        child: Icon(
+                          done ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+                          size: 18,
+                          color: done ? color : AppColors.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        habit.title,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: done ? FontWeight.bold : FontWeight.normal,
+                          color: done ? color : AppColors.onSurface,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        if (allDone && habits.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              const Icon(Icons.emoji_events_rounded, size: 14, color: AppColors.warning),
+              const SizedBox(width: 6),
+              Text(
+                l10n.translate('allHabitsDone'),
+                style: AppTypography.bodySm(color: AppColors.warning),
+              ),
+            ],
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _miniEmpty(IconData icon, String title, String message, String action, VoidCallback onAction) {    return Container(
       key: ValueKey('empty-$title'),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -324,7 +446,7 @@ class _HomeTodayScreenState extends State<HomeTodayScreen> with SimulatedFetchMi
       decoration: BoxDecoration(
         color: AppColors.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(16),
-        border: const Border(right: BorderSide(color: AppColors.primary, width: 4)),
+        border: Border(right: BorderSide(color: AppColors.primary, width: 4)),
         boxShadow: [
           BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 12, offset: const Offset(0, 2)),
         ],
@@ -368,7 +490,7 @@ class _HomeTodayScreenState extends State<HomeTodayScreen> with SimulatedFetchMi
             style: TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant),
           ),
           trailing: task.isCommitment
-              ? const Icon(Icons.star_rounded, color: AppColors.primary, size: 20)
+              ? Icon(Icons.star_rounded, color: AppColors.primary, size: 20)
               : null,
         ),
       ),
@@ -412,13 +534,30 @@ class _HomeTodayScreenState extends State<HomeTodayScreen> with SimulatedFetchMi
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    block.title,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: isNow ? AppColors.onPrimaryFixed : AppColors.onSurface,
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          block.title,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            decoration: block.isDone ? TextDecoration.lineThrough : null,
+                            color: isNow ? AppColors.onPrimaryFixed : AppColors.onSurface,
+                          ),
+                        ),
+                      ),
+                      if (block.hasOutcome) ...[
+                        const SizedBox(width: 4),
+                        Icon(
+                          block.isDone ? Icons.check_circle_rounded : Icons.cancel_rounded,
+                          size: 13,
+                          color: block.isDone
+                              ? AppColors.success
+                              : (isNow ? AppColors.onPrimaryFixed : AppColors.error),
+                        ),
+                      ],
+                    ],
                   ),
                 ],
               ),

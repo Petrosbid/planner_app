@@ -12,6 +12,8 @@ import '../../core/widgets/app_scope.dart';
 import '../../core/widgets/fade_slide_in.dart';
 import '../../core/widgets/skeleton.dart';
 import '../../data/models/planner_models.dart';
+import '../common/block_form_sheet.dart';
+import '../common/distraction_reason_sheet.dart';
 
 class CalendarWeekScreen extends StatefulWidget {
   const CalendarWeekScreen({super.key});
@@ -22,8 +24,8 @@ class CalendarWeekScreen extends StatefulWidget {
 
 class _CalendarWeekScreenState extends State<CalendarWeekScreen> with SimulatedFetchMixin {
   static const double _rowHeight = 64;
-  static const int _firstHour = 8;
-  static const int _lastHour = 20;
+  static const int _firstHour = 0;
+  static const int _lastHour = 23;
   static const double _usefulCapacityHours = 6.5;
 
   String _selectedView = '3-Day'; // Day, 3-Day, Week, Month
@@ -68,16 +70,8 @@ class _CalendarWeekScreenState extends State<CalendarWeekScreen> with SimulatedF
 
   bool get _isOverloaded => _plannedHours > _usefulCapacityHours;
 
-  String _categoryLabel(String category, AppLocalizations l10n) {
-    switch (category) {
-      case 'deep':
-        return l10n.translate('deepWork');
-      case 'meeting':
-        return l10n.translate('meeting');
-      default:
-        return l10n.translate('review');
-    }
-  }
+  String _categoryLabel(String category, AppLocalizations l10n) =>
+      BlockFormSheet.categoryLabel(category, l10n);
 
   @override
   Widget build(BuildContext context) {
@@ -138,7 +132,7 @@ class _CalendarWeekScreenState extends State<CalendarWeekScreen> with SimulatedF
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.add_rounded, color: AppColors.primary),
+            icon: Icon(Icons.add_rounded, color: AppColors.primary),
             tooltip: l10n.translate('addTimeBlock'),
             onPressed: () => _showAddBlockSheet(l10n),
           ),
@@ -333,7 +327,7 @@ class _CalendarWeekScreenState extends State<CalendarWeekScreen> with SimulatedF
                   child: _buildTimeBlock(tb, l10n, isFa, useJalali),
                 ),
               ),
-            if (ZedDateUtils.isToday(_selectedDay) && _now.hour >= _firstHour && _now.hour < _lastHour)
+            if (ZedDateUtils.isToday(_selectedDay))
               Positioned(
                 top: (_now.hour + _now.minute / 60 - _firstHour) * _rowHeight,
                 left: 44,
@@ -369,11 +363,30 @@ class _CalendarWeekScreenState extends State<CalendarWeekScreen> with SimulatedF
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              tb.title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.onSurface),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    tb.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      decoration: tb.isDone ? TextDecoration.lineThrough : null,
+                      color: tb.isDone ? AppColors.onSurfaceVariant : AppColors.onSurface,
+                    ),
+                  ),
+                ),
+                if (tb.hasOutcome) ...[
+                  const SizedBox(width: 4),
+                  Icon(
+                    tb.isDone ? Icons.check_circle_rounded : Icons.cancel_rounded,
+                    size: 14,
+                    color: tb.isDone ? AppColors.success : AppColors.error,
+                  ),
+                ],
+              ],
             ),
             if (tb.durationHours >= 0.75)
               Text(
@@ -563,7 +576,7 @@ class _CalendarWeekScreenState extends State<CalendarWeekScreen> with SimulatedF
                                 width: 4,
                                 height: 4,
                                 margin: const EdgeInsets.symmetric(horizontal: 1),
-                                decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
+                                decoration: BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
                               ),
                           ],
                         ),
@@ -583,107 +596,8 @@ class _CalendarWeekScreenState extends State<CalendarWeekScreen> with SimulatedF
   // ---------- sheets ----------
 
   void _showAddBlockSheet(AppLocalizations l10n) {
-    final titleController = TextEditingController();
-    double startHour = 9;
-    double duration = 1;
-    String category = 'deep';
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setSheetState) => Padding(
-          padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
-          child: Container(
-            padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceContainerLowest,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(l10n.translate('addBlockTitle'), style: AppTypography.headlineMd()),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: titleController,
-                  autofocus: true,
-                  decoration: InputDecoration(
-                    hintText: l10n.translate('blockTitleHint'),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  '${l10n.translate('startTimeLabel')}: ${ZedDateUtils.hourLabel(startHour, fa: l10n.isFa)}',
-                  style: AppTypography.bodySm(),
-                ),
-                Slider(
-                  value: startHour,
-                  min: _firstHour.toDouble(),
-                  max: _lastHour.toDouble(),
-                  divisions: (_lastHour - _firstHour) * 2,
-                  onChanged: (v) => setSheetState(() => startHour = v),
-                ),
-                Text(
-                  '${l10n.translate('durationLabel')}: ${ZedDateUtils.toFaDigits(duration, fa: l10n.isFa)} ${l10n.translate('hoursUnit')}',
-                  style: AppTypography.bodySm(),
-                ),
-                Slider(
-                  value: duration,
-                  min: 0.5,
-                  max: 4,
-                  divisions: 7,
-                  onChanged: (v) => setSheetState(() => duration = v),
-                ),
-                Wrap(
-                  spacing: 8,
-                  children: [
-                    for (final c in ['deep', 'meeting', 'review'])
-                      ChoiceChip(
-                        label: Text(_categoryLabel(c, l10n)),
-                        selected: category == c,
-                        selectedColor: AppColors.primary,
-                        showCheckmark: false,
-                        onSelected: (_) => setSheetState(() => category = c),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: FilledButton(
-                    onPressed: () async {
-                      final title = titleController.text.trim();
-                      if (title.isEmpty) return;
-                      final color = category == 'deep'
-                          ? AppColors.primary
-                          : category == 'meeting'
-                              ? AppColors.success
-                              : AppColors.warning;
-                      await AppScope.of(context).store.addBlock(
-                            title: title,
-                            date: _selectedDay,
-                            startHour: startHour,
-                            durationHours: duration,
-                            colorValue: color.toARGB32(),
-                            category: category,
-                          );
-                      if (!ctx.mounted) return;
-                      Navigator.of(ctx).pop();
-                    },
-                    child: Text(l10n.translate('save')),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
+    // Shared form: 24h range, custom categories, overlap validation.
+    BlockFormSheet.show(context, initialDate: _selectedDay);
   }
 
   void _showBlockDetailsSheet(TimeBlockItem tb, AppLocalizations l10n, bool isFa, bool useJalali) {
@@ -733,6 +647,46 @@ class _CalendarWeekScreenState extends State<CalendarWeekScreen> with SimulatedF
                 ],
               ),
               const SizedBox(height: 20),
+              // Outcome: done / not done (not done records a reason).
+              Text(l10n.translate('outcomeSection'), style: AppTypography.labelCaps()),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: _outcomeButton(
+                      ctx: ctx,
+                      selected: tb.isDone,
+                      icon: Icons.check_circle_rounded,
+                      label: l10n.translate('markDone'),
+                      color: AppColors.success,
+                      onTap: () {
+                        tb.isDone = true;
+                        tb.hasOutcome = true;
+                        store.updateBlock(tb);
+                        Navigator.of(ctx).pop();
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _outcomeButton(
+                      ctx: ctx,
+                      selected: tb.hasOutcome && !tb.isDone,
+                      icon: Icons.cancel_rounded,
+                      label: l10n.translate('markNotDone'),
+                      color: AppColors.error,
+                      onTap: () {
+                        tb.isDone = false;
+                        tb.hasOutcome = true;
+                        store.updateBlock(tb);
+                        Navigator.of(ctx).pop();
+                        DistractionReasonSheet.show(context, relatedTitle: tb.title);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
               Row(
                 children: [
                   Expanded(
@@ -761,6 +715,31 @@ class _CalendarWeekScreenState extends State<CalendarWeekScreen> with SimulatedF
           ),
         );
       },
+    );
+  }
+
+  Widget _outcomeButton({
+    required BuildContext ctx,
+    required bool selected,
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      child: OutlinedButton.icon(
+        onPressed: onTap,
+        style: OutlinedButton.styleFrom(
+          foregroundColor: selected ? Colors.white : color,
+          backgroundColor: selected ? color : color.withValues(alpha: 0.08),
+          side: BorderSide(color: selected ? color : color.withValues(alpha: 0.4)),
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        ),
+        icon: Icon(icon, size: 18),
+        label: Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+      ),
     );
   }
 

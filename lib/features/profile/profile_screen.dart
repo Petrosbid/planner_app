@@ -79,7 +79,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Container(
             width: 64,
             height: 64,
-            decoration: const BoxDecoration(color: AppColors.primaryContainer, shape: BoxShape.circle),
+            decoration: BoxDecoration(color: AppColors.primaryContainer, shape: BoxShape.circle),
             child: Center(
               child: Text(
                 initials,
@@ -111,7 +111,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.edit_outlined, color: AppColors.primary),
+            icon: Icon(Icons.edit_outlined, color: AppColors.primary),
             tooltip: l10n.translate('editName'),
             onPressed: () => _showNameDialog(l10n, scope.settings),
           ),
@@ -220,6 +220,70 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  // ---------- color palette ----------
+
+  static const List<int> _palette = [
+    0xFF3C51C2, // ZedPlan blue (default)
+    0xFF6366F1, // indigo
+    0xFF8B5CF6, // violet
+    0xFFEC4899, // pink
+    0xFFEF4444, // red
+    0xFFF97316, // orange
+    0xFF10B981, // emerald
+    0xFF14B8A6, // teal
+    0xFF0EA5E9, // sky
+    0xFF64748B, // slate
+  ];
+
+  Widget _colorPalette() {
+    final selected = _settings.seedColor;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      child: SizedBox(
+        height: 44,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          itemCount: _palette.length,
+          separatorBuilder: (_, __) => const SizedBox(width: 10),
+          itemBuilder: (ctx, i) {
+            final color = Color(_palette[i]);
+            final isSelected = _palette[i] == selected;
+            return GestureDetector(
+              onTap: () => _settings.setSeedColor(_palette[i]),
+              child: AnimatedScale(
+                scale: isSelected ? 1.15 : 1.0,
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeOutBack,
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: color,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isSelected ? AppColors.onSurface : Colors.transparent,
+                      width: 2.5,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: color.withValues(alpha: isSelected ? 0.5 : 0.15),
+                        blurRadius: isSelected ? 8 : 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: isSelected
+                      ? const Icon(Icons.check_rounded, size: 18, color: Colors.white)
+                      : null,
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
   // ---------- settings ----------
 
   Widget _settingsCard(AppLocalizations l10n) {
@@ -246,21 +310,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
             value: _settings.themeMode == ThemeMode.dark,
             onChanged: (v) => _settings.setThemeMode(v ? ThemeMode.dark : ThemeMode.light),
           ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
+            child: Text(l10n.translate('themeColor'), style: AppTypography.labelCaps()),
+          ),
+          _colorPalette(),
+          const SizedBox(height: 8),
           const Divider(height: 1, indent: 16, endIndent: 16),
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
             child: Text(l10n.translate('calendarSection'), style: AppTypography.labelCaps()),
           ),
           ListTile(
-            leading: const Icon(Icons.today_rounded, color: AppColors.primary),
+            leading: Icon(Icons.today_rounded, color: AppColors.primary),
             title: Text(l10n.translate('jalaliLabel')),
-            trailing: _settings.useJalali ? const Icon(Icons.check_rounded, color: AppColors.primary) : null,
+            trailing: _settings.useJalali ? Icon(Icons.check_rounded, color: AppColors.primary) : null,
             onTap: () => _settings.setUseJalali(true),
           ),
           ListTile(
-            leading: const Icon(Icons.calendar_view_day_rounded, color: AppColors.primary),
+            leading: Icon(Icons.calendar_view_day_rounded, color: AppColors.primary),
             title: Text(l10n.translate('gregorianLabel')),
-            trailing: !_settings.useJalali ? const Icon(Icons.check_rounded, color: AppColors.primary) : null,
+            trailing: !_settings.useJalali ? Icon(Icons.check_rounded, color: AppColors.primary) : null,
             onTap: () => _settings.setUseJalali(false),
           ),
           const Divider(height: 1, indent: 16, endIndent: 16),
@@ -269,15 +339,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: Text(l10n.translate('languageSection'), style: AppTypography.labelCaps()),
           ),
           ListTile(
-            leading: const Icon(Icons.translate_rounded, color: AppColors.primary),
+            leading: Icon(Icons.translate_rounded, color: AppColors.primary),
             title: Text(l10n.isFa ? 'فارسی' : 'Persian'),
-            trailing: l10n.isFa ? const Icon(Icons.check_rounded, color: AppColors.primary) : null,
+            trailing: l10n.isFa ? Icon(Icons.check_rounded, color: AppColors.primary) : null,
             onTap: () => _settings.setLocale(const Locale('fa')),
           ),
           ListTile(
-            leading: const Icon(Icons.translate_rounded, color: AppColors.primary),
+            leading: Icon(Icons.translate_rounded, color: AppColors.primary),
             title: const Text('English'),
-            trailing: !l10n.isFa ? const Icon(Icons.check_rounded, color: AppColors.primary) : null,
+            trailing: !l10n.isFa ? Icon(Icons.check_rounded, color: AppColors.primary) : null,
             onTap: () => _settings.setLocale(const Locale('en')),
           ),
           const Divider(height: 1, indent: 16, endIndent: 16),
@@ -327,7 +397,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.info_outline_rounded, color: AppColors.primary),
+          Icon(Icons.info_outline_rounded, color: AppColors.primary),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
