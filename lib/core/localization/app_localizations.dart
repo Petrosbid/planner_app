@@ -6,7 +6,8 @@ class AppLocalizations {
   AppLocalizations(this.locale);
 
   static AppLocalizations of(BuildContext context) {
-    return Localizations.of<AppLocalizations>(context, AppLocalizations) ?? AppLocalizations(const Locale('fa'));
+    return Localizations.of<AppLocalizations>(context, AppLocalizations) ??
+        AppLocalizations(const Locale('fa'));
   }
 
   bool get isFa => locale.languageCode == 'fa';
@@ -118,7 +119,8 @@ class AppLocalizations {
     'plannedTime': 'زمان برنامه‌ریزی‌شده',
     'usefulCapacity': 'ظرفیت مفید روز',
     'categorySplit': 'توزیع بر اساس دسته',
-    'capacitySuggestion': 'پیشنهاد بازنگری: آیا می‌توانید یک مورد را حذف یا به فردا منتقل کنید؟ ظرفیت مفید روز حدود ۶.۵ ساعت است.',
+    'capacitySuggestion':
+        'پیشنهاد بازنگری: آیا می‌توانید یک مورد را حذف یا به فردا منتقل کنید؟ ظرفیت مفید روز حدود ۶.۵ ساعت است.',
     'close': 'بستن',
     'details': 'جزئیات',
     'startTime': 'زمان شروع',
@@ -128,7 +130,8 @@ class AppLocalizations {
     'editBlock': 'ویرایش',
     'blockDeleted': 'بلوک زمانی حذف شد',
     'noBlocksTitle': 'برنامه‌ای برای این روز ثبت نشده',
-    'noBlocksSubtitle': 'با یک بلوک زمانی ساده شروع کنید؛ برنامه‌ریزی واقع‌بینانه از همین‌جا آغاز می‌شود.',
+    'noBlocksSubtitle':
+        'با یک بلوک زمانی ساده شروع کنید؛ برنامه‌ریزی واقع‌بینانه از همین‌جا آغاز می‌شود.',
     'addTimeBlock': 'افزودن بلوک زمانی',
     'today': 'امروز',
     'deepWork': 'کار عمیق',
@@ -148,11 +151,14 @@ class AppLocalizations {
     'viewAll': 'مشاهده همه',
     // Onboarding
     'onboardTitle1': 'برنامه‌ریزی واقع‌بینانه',
-    'onboardBody1': 'وظایف، بلوک‌های زمانی و تعهدات خود را در یک تقویم هوشمند بچینید و ظرفیت روز خود را بشناسید.',
+    'onboardBody1':
+        'وظایف، بلوک‌های زمانی و تعهدات خود را در یک تقویم هوشمند بچینید و ظرفیت روز خود را بشناسید.',
     'onboardTitle2': 'تمرکز عمیق',
-    'onboardBody2': 'با تایمر تمرکز، ثبت وقفه‌ها و آمار واقعی، روی کارهای مهم تمرکز کنید نه فقط مشغول بودن.',
+    'onboardBody2':
+        'با تایمر تمرکز، ثبت وقفه‌ها و آمار واقعی، روی کارهای مهم تمرکز کنید نه فقط مشغول بودن.',
     'onboardTitle3': 'بازبینی و رشد',
-    'onboardBody3': 'هر روز و هر هفته عملکرد خود را مرور کنید؛ سیستم الگوهای رفتاری شما را به شما نشان می‌دهد.',
+    'onboardBody3':
+        'هر روز و هر هفته عملکرد خود را مرور کنید؛ سیستم الگوهای رفتاری شما را به شما نشان می‌دهد.',
     'onboardNameTitle': 'چه نامی داشته باشیم؟',
     'onboardNameSubtitle': 'برای شخصی‌سازی تجربه، نام خود را وارد کنید.',
     'onboardNameHint': 'نام شما...',
@@ -170,10 +176,25 @@ class AppLocalizations {
     'statBestStreak': 'بهترین زنجیره',
     'appearanceSection': 'ظاهر',
     'calendarSection': 'تقویم',
+    'securitySection': 'امنیت',
+    'lockAppLabel': 'قفل برنامه',
+    'biometricLabel': 'استفاده از اثر انگشت/چهره',
+    'changePinLabel': 'تغییر پین',
+    'newPinLabel': 'پین جدید',
+    'confirmPinLabel': 'تکرار پین',
+    'pinValidationError': 'پین باید ۴ رقم باشد و با تکرار آن یکسان باشد',
+    'pinSaved': 'پین جدید ذخیره شد',
+    'appLockedTitle': 'برنامه قفل است',
+    'scanToUnlock': 'برای باز کردن، اثر انگشت یا چهره را اسکن کنید',
+    'enterPinToUnlock': 'پین ۴ رقمی را وارد کنید',
+    'unlockWithBiometric': 'باز کردن با بیومتریک',
+    'biometricFailed': 'احراز هویت بیومتریک ناموفق بود',
+    'pinInvalid': 'پین وارد شده اشتباه است',
     'jalaliLabel': 'هجری شمسی (جلالی)',
     'gregorianLabel': 'میلادی',
     // Time blocks
-    'timeConflictError': 'تداخل زمانی: این بازه با بلوک «%s» هم‌پوشانی دارد. زمان دیگری انتخاب کنید.',
+    'timeConflictError':
+        'تداخل زمانی: این بازه با بلوک «%s» هم‌پوشانی دارد. زمان دیگری انتخاب کنید.',
     'addCategory': 'دسته جدید',
     'categoryNameHint': 'نام دسته (مثال: ورزش)',
     'categoryExists': 'این دسته قبلاً ثبت شده است',
@@ -219,13 +240,18 @@ class AppLocalizations {
     // Notifications
     'notificationsSection': 'اعلان‌ها',
     'notificationsLabel': 'اعلان‌های زمان‌بندی و یادآور روزانه',
-    'notificationsDesc': 'شروع و پایان بلوک‌های زمانی، ثبت نتیجه و جمع‌بندی پایان روز',
+    'notificationsDesc':
+        'شروع و پایان بلوک‌های زمانی، ثبت نتیجه و جمع‌بندی پایان روز',
+    'blockEndAlarmLabel': 'آلارم پایان بلوک',
+    'blockEndAlarmDesc': 'برای اعلان پایان بلوک، صدای هشدار قوی پخش شود',
     'languageSection': 'زبان',
     'aboutSection': 'درباره',
-    'aboutBody': 'ZedPlan یک برنامه‌ریز آفلاین با تمرکز بر رفتار و خودمدیریتی است. نسخه ۰.۲.۰',
+    'aboutBody':
+        'ZedPlan یک برنامه‌ریز آفلاین با تمرکز بر رفتار و خودمدیریتی است. نسخه 1.0.0',
     'resetData': 'پاک کردن همه داده‌ها',
     'resetConfirmTitle': 'همه داده‌ها پاک شود؟',
-    'resetConfirmBody': 'این عمل غیرقابل بازگشت است و همه وظایف، عادت‌ها و یادداشت‌های شما حذف می‌شود.',
+    'resetConfirmBody':
+        'این عمل غیرقابل بازگشت است و همه وظایف، عادت‌ها و یادداشت‌های شما حذف می‌شود.',
     'nameSaved': 'نام ذخیره شد',
     'dataCleared': 'همه داده‌ها پاک شد',
     // Tasks
@@ -233,7 +259,8 @@ class AppLocalizations {
     'addTask': 'وظیفه جدید',
     'taskTitleHint': 'عنوان وظیفه...',
     'emptyTasksTitle': 'هنوز وظیفه‌ای ندارید',
-    'emptyTasksMessage': 'اولین وظیفه خود را بسازید؛ برنامه‌ریزی واقعی از همین‌جا شروع می‌شود.',
+    'emptyTasksMessage':
+        'اولین وظیفه خود را بسازید؛ برنامه‌ریزی واقعی از همین‌جا شروع می‌شود.',
     'filterAll': 'همه',
     'filterPending': 'در انتظار',
     'filterDone': 'انجام‌شده',
@@ -253,9 +280,17 @@ class AppLocalizations {
     'startTimeLabel': 'ساعت شروع',
     'durationLabel': 'مدت',
     'blockAdded': 'بلوک زمانی اضافه شد',
+    'blockAddedMultiple': '%s بلوک زمانی اضافه شد',
     'timeBlock': 'بلوک زمانی',
     'dateLabel': 'تاریخ',
     'hoursUnit': 'ساعت',
+    'repeatLabel': 'تکرار',
+    'repeatNone': 'بدون تکرار',
+    'repeatDaily': 'روزانه',
+    'repeatEveryOtherDay': 'یک روز در میان',
+    'repeatWeekly': 'هفتگی',
+    'repeatBiweekly': 'دو هفته یک‌بار',
+    'repeatMonthly': 'ماهانه',
     // Habits
     'habitsTitle': 'عادت‌ها و استمرار',
     'emptyHabitsTitle': 'عادتی ثبت نشده است',
@@ -279,14 +314,16 @@ class AppLocalizations {
     // Goals
     'goalsTitle': 'اهداف و چشم‌انداز',
     'emptyGoalsTitle': 'هدفی تعریف نشده است',
-    'emptyGoalsMessage': 'اهداف خود را مشخص کنید تا اقدامات روزانه معنا پیدا کنند.',
+    'emptyGoalsMessage':
+        'اهداف خود را مشخص کنید تا اقدامات روزانه معنا پیدا کنند.',
     'addGoal': 'هدف جدید',
     'goalTitleHint': 'عنوان هدف...',
     'progress': 'پیشرفت',
     // Projects
     'projectsTitle': 'پروژه‌ها',
     'emptyProjectsTitle': 'پروژه‌ای وجود ندارد',
-    'emptyProjectsMessage': 'پروژه‌های خود را بسازید و پیشرفت‌شان را دنبال کنید.',
+    'emptyProjectsMessage':
+        'پروژه‌های خود را بسازید و پیشرفت‌شان را دنبال کنید.',
     'addProject': 'پروژه جدید',
     'projectTitleHint': 'عنوان پروژه...',
     // Focus
@@ -300,12 +337,14 @@ class AppLocalizations {
     'accomplishments': 'دستاوردهای امروز',
     'reviewSavedOk': 'ارزیابی روز ذخیره شد',
     'emptyWeeklyTitle': 'داده کافی برای تحلیل هفتگی نیست',
-    'emptyWeeklyMessage': 'بعد از چند روز استفاده، خلاصه هفتگی شما اینجا ساخته می‌شود.',
+    'emptyWeeklyMessage':
+        'بعد از چند روز استفاده، خلاصه هفتگی شما اینجا ساخته می‌شود.',
     // Analytics
     'analyticsTitle': 'تحلیل رفتاری',
     'analyticsSubtitle': 'شناخت ریتم شخصی',
     'emptyAnalyticsTitle': 'هنوز داده‌ای برای تحلیل نیست',
-    'emptyAnalyticsMessage': 'با افزودن وظیفه، تمرکز یا عادت، نمودارهای واقعی شما اینجا شکل می‌گیرد.',
+    'emptyAnalyticsMessage':
+        'با افزودن وظیفه، تمرکز یا عادت، نمودارهای واقعی شما اینجا شکل می‌گیرد.',
     'focusByCategory': 'توزیع زمان بر اساس نوع فعالیت',
     'weeklyFocus': 'تمرکز هفتگی (دقیقه)',
     'executionRate': 'نرخ اجرا',
@@ -318,6 +357,7 @@ class AppLocalizations {
     'emptyBlocksCalendar': 'برنامه‌ای برای این روز ثبت نشده',
     'addTaskCta': 'ساخت وظیفه',
     'goToCalendar': 'رفتن به تقویم',
+    'tasksCountShort': '%s کار',
   };
 
   static final Map<String, String> _en = {
@@ -388,7 +428,8 @@ class AppLocalizations {
     'plannedTime': 'Planned time',
     'usefulCapacity': 'Useful daily capacity',
     'categorySplit': 'Split by category',
-    'capacitySuggestion': 'Review suggestion: can you remove or move one item to tomorrow? Useful daily capacity is around 6.5 hours.',
+    'capacitySuggestion':
+        'Review suggestion: can you remove or move one item to tomorrow? Useful daily capacity is around 6.5 hours.',
     'close': 'Close',
     'details': 'Details',
     'startTime': 'Start time',
@@ -398,7 +439,8 @@ class AppLocalizations {
     'editBlock': 'Edit',
     'blockDeleted': 'Time block deleted',
     'noBlocksTitle': 'Nothing scheduled for this day',
-    'noBlocksSubtitle': 'Start with one simple time block — realistic planning starts here.',
+    'noBlocksSubtitle':
+        'Start with one simple time block — realistic planning starts here.',
     'addTimeBlock': 'Add time block',
     'today': 'Today',
     'deepWork': 'Deep Work',
@@ -418,11 +460,14 @@ class AppLocalizations {
     'viewAll': 'View all',
     // Onboarding
     'onboardTitle1': 'Plan realistically',
-    'onboardBody1': 'Organize tasks, time blocks and commitments in a smart calendar and know your daily capacity.',
+    'onboardBody1':
+        'Organize tasks, time blocks and commitments in a smart calendar and know your daily capacity.',
     'onboardTitle2': 'Deep focus',
-    'onboardBody2': 'With a focus timer, interruption logging and real stats — work on what matters, not just staying busy.',
+    'onboardBody2':
+        'With a focus timer, interruption logging and real stats — work on what matters, not just staying busy.',
     'onboardTitle3': 'Reflect & grow',
-    'onboardBody3': 'Review your days and weeks; the system reveals your behavioral patterns back to you.',
+    'onboardBody3':
+        'Review your days and weeks; the system reveals your behavioral patterns back to you.',
     'onboardNameTitle': 'What should we call you?',
     'onboardNameSubtitle': 'Enter your name to personalize the experience.',
     'onboardNameHint': 'Your name...',
@@ -440,10 +485,25 @@ class AppLocalizations {
     'statBestStreak': 'Best streak',
     'appearanceSection': 'Appearance',
     'calendarSection': 'Calendar',
+    'securitySection': 'Security',
+    'lockAppLabel': 'Lock app',
+    'biometricLabel': 'Use fingerprint/face ID',
+    'changePinLabel': 'Change PIN',
+    'newPinLabel': 'New PIN',
+    'confirmPinLabel': 'Confirm PIN',
+    'pinValidationError': 'PIN must be 4 digits and match confirmation',
+    'pinSaved': 'PIN saved',
+    'appLockedTitle': 'App locked',
+    'scanToUnlock': 'Scan your fingerprint/face to unlock',
+    'enterPinToUnlock': 'Enter your 4-digit PIN',
+    'unlockWithBiometric': 'Unlock with biometric',
+    'biometricFailed': 'Biometric authentication failed',
+    'pinInvalid': 'Incorrect PIN',
     'jalaliLabel': 'Jalali (Solar Hijri)',
     'gregorianLabel': 'Gregorian',
     // Time blocks
-    'timeConflictError': 'Time conflict: this range overlaps with "%s". Pick another time.',
+    'timeConflictError':
+        'Time conflict: this range overlaps with "%s". Pick another time.',
     'addCategory': 'New category',
     'categoryNameHint': 'Category name (e.g. Workout)',
     'categoryExists': 'This category already exists',
@@ -489,13 +549,18 @@ class AppLocalizations {
     // Notifications
     'notificationsSection': 'Notifications',
     'notificationsLabel': 'Schedule alerts & daily reminder',
-    'notificationsDesc': 'Block start/end prompts, outcome submission, and the end-of-day wrap-up',
+    'notificationsDesc':
+        'Block start/end prompts, outcome submission, and the end-of-day wrap-up',
+    'blockEndAlarmLabel': 'Block end alarm',
+    'blockEndAlarmDesc': 'Play a louder alarm sound for end-of-block reminders',
     'languageSection': 'Language',
     'aboutSection': 'About',
-    'aboutBody': 'ZedPlan is an offline planner focused on behavior and self-management. Version 0.2.0',
+    'aboutBody':
+        'ZedPlan is an offline planner focused on behavior and self-management. Version 1.0.0',
     'resetData': 'Clear all data',
     'resetConfirmTitle': 'Clear all data?',
-    'resetConfirmBody': 'This cannot be undone. All tasks, habits and notes will be deleted.',
+    'resetConfirmBody':
+        'This cannot be undone. All tasks, habits and notes will be deleted.',
     'nameSaved': 'Name saved',
     'dataCleared': 'All data cleared',
     // Tasks
@@ -503,7 +568,8 @@ class AppLocalizations {
     'addTask': 'New task',
     'taskTitleHint': 'Task title...',
     'emptyTasksTitle': 'No tasks yet',
-    'emptyTasksMessage': 'Create your first task — realistic planning starts here.',
+    'emptyTasksMessage':
+        'Create your first task — realistic planning starts here.',
     'filterAll': 'All',
     'filterPending': 'Pending',
     'filterDone': 'Done',
@@ -523,9 +589,17 @@ class AppLocalizations {
     'startTimeLabel': 'Start time',
     'durationLabel': 'Duration',
     'blockAdded': 'Time block added',
+    'blockAddedMultiple': '%s time blocks added',
     'timeBlock': 'Time block',
     'dateLabel': 'Date',
     'hoursUnit': 'hrs',
+    'repeatLabel': 'Repeat',
+    'repeatNone': 'None',
+    'repeatDaily': 'Daily',
+    'repeatEveryOtherDay': 'Every other day',
+    'repeatWeekly': 'Weekly',
+    'repeatBiweekly': 'Biweekly',
+    'repeatMonthly': 'Monthly',
     // Habits
     'habitsTitle': 'Habits & consistency',
     'emptyHabitsTitle': 'No habits yet',
@@ -539,7 +613,8 @@ class AppLocalizations {
     // Notes
     'notesTitle': 'Notes',
     'emptyNotesTitle': 'No notes yet',
-    'emptyNotesMessage': 'Capture your thoughts and ideas so they are not lost.',
+    'emptyNotesMessage':
+        'Capture your thoughts and ideas so they are not lost.',
     'addNote': 'New note',
     'noteTitleHint': 'Title...',
     'noteBodyHint': 'Note content...',
@@ -570,12 +645,14 @@ class AppLocalizations {
     'accomplishments': 'Accomplishments today',
     'reviewSavedOk': 'Daily review saved',
     'emptyWeeklyTitle': 'Not enough data for weekly analysis',
-    'emptyWeeklyMessage': 'After a few days of use, your weekly summary will appear here.',
+    'emptyWeeklyMessage':
+        'After a few days of use, your weekly summary will appear here.',
     // Analytics
     'analyticsTitle': 'Behavioral analytics',
     'analyticsSubtitle': 'Know your personal rhythm',
     'emptyAnalyticsTitle': 'No data to analyze yet',
-    'emptyAnalyticsMessage': 'Add a task, focus session or habit and your real charts will take shape here.',
+    'emptyAnalyticsMessage':
+        'Add a task, focus session or habit and your real charts will take shape here.',
     'focusByCategory': 'Time split by activity type',
     'weeklyFocus': 'Weekly focus (minutes)',
     'executionRate': 'Execution rate',
@@ -588,6 +665,7 @@ class AppLocalizations {
     'emptyBlocksCalendar': 'Nothing scheduled for this day',
     'addTaskCta': 'Create a task',
     'goToCalendar': 'Go to calendar',
+    'tasksCountShort': '%s tasks',
   };
 }
 

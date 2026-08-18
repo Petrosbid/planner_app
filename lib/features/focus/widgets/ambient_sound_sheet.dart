@@ -1,27 +1,8 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
-
-enum AmbientSoundType {
-  rain(title: 'باران ملایم', subtitle: 'صدای بارش قطرات آرام‌بخش', icon: Icons.water_drop_rounded, color: Color(0xFF0284C7)),
-  forest(title: 'طبیعت و جنگل', subtitle: 'آواز پرندگان و نسیم درختان', icon: Icons.forest_rounded, color: Color(0xFF16A34A)),
-  cafe(title: 'کافه شلوغ', subtitle: 'همهمه ملایم و انرژی محیطی', icon: Icons.coffee_rounded, color: Color(0xFFD97706)),
-  waves(title: 'امواج دریا', subtitle: 'ریتم آرامش‌بخش ساحل', icon: Icons.waves_rounded, color: Color(0xFF0D9488)),
-  whiteNoise(title: 'نویز سفید', subtitle: 'حذف کامل صداهای مزاحم', icon: Icons.graphic_eq_rounded, color: Color(0xFF6366F1)),
-  zenChimes(title: 'کاسه تبتی و ذن', subtitle: 'طنین مدیتیشن و تمرکز عمیق', icon: Icons.self_improvement_rounded, color: Color(0xFF8B5CF6));
-
-  final String title;
-  final String subtitle;
-  final IconData icon;
-  final Color color;
-
-  const AmbientSoundType({
-    required this.title,
-    required this.subtitle,
-    required this.icon,
-    required this.color,
-  });
-}
+import 'ambient_sound_type.dart';
+import 'audio_player_service.dart';
 
 class AmbientSoundSheet extends StatefulWidget {
   final bool isEnabled;
@@ -118,7 +99,8 @@ class _AmbientSoundSheetState extends State<AmbientSoundSheet>
         color: isDark ? AppColors.darkSurface : Colors.white,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
         border: Border.all(
-          color: isDark ? AppColors.darkOutlineVariant : AppColors.outlineVariant,
+          color:
+              isDark ? AppColors.darkOutlineVariant : AppColors.outlineVariant,
           width: 0.5,
         ),
       ),
@@ -156,13 +138,16 @@ class _AmbientSoundSheetState extends State<AmbientSoundSheet>
                     children: [
                       const Text(
                         'صداهای محیطی تمرکز (Zen Audio)',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                       Text(
                         _enabled ? 'در حال پخش: ${_sound.title}' : 'غیرفعال',
                         style: TextStyle(
                           fontSize: 12,
-                          color: _enabled ? _sound.color : AppColors.onSurfaceVariant,
+                          color: _enabled
+                              ? _sound.color
+                              : AppColors.onSurfaceVariant,
                         ),
                       ),
                     ],
@@ -172,9 +157,14 @@ class _AmbientSoundSheetState extends State<AmbientSoundSheet>
               Switch(
                 value: _enabled,
                 activeThumbColor: _sound.color,
-                onChanged: (val) {
+                onChanged: (val) async {
                   setState(() => _enabled = val);
                   widget.onToggle(val);
+                  if (val) {
+                    await AudioPlayerService.instance.play(_sound, _volume);
+                  } else {
+                    await AudioPlayerService.instance.stop();
+                  }
                 },
               ),
             ],
@@ -206,8 +196,12 @@ class _AmbientSoundSheetState extends State<AmbientSoundSheet>
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: List.generate(24, (index) {
                           final phase = (index / 24.0) * 2 * pi;
-                          final heightFactor = (sin(_waveController.value * 2 * pi + phase) + 1) / 2;
-                          final barHeight = 6.0 + (heightFactor * 18.0 * (_volume / 100.0));
+                          final heightFactor =
+                              (sin(_waveController.value * 2 * pi + phase) +
+                                      1) /
+                                  2;
+                          final barHeight =
+                              6.0 + (heightFactor * 18.0 * (_volume / 100.0));
 
                           return Container(
                             width: 3.5,
@@ -230,7 +224,9 @@ class _AmbientSoundSheetState extends State<AmbientSoundSheet>
                       Icon(
                         Icons.volume_down_rounded,
                         size: 20,
-                        color: isDark ? AppColors.darkOnSurfaceVariant : AppColors.onSurfaceVariant,
+                        color: isDark
+                            ? AppColors.darkOnSurfaceVariant
+                            : AppColors.onSurfaceVariant,
                       ),
                       Expanded(
                         child: Slider(
@@ -239,9 +235,10 @@ class _AmbientSoundSheetState extends State<AmbientSoundSheet>
                           max: 100,
                           activeColor: _sound.color,
                           inactiveColor: _sound.color.withValues(alpha: 0.2),
-                          onChanged: (val) {
+                          onChanged: (val) async {
                             setState(() => _volume = val);
                             widget.onVolumeChanged(val);
+                            await AudioPlayerService.instance.setVolume(val);
                           },
                         ),
                       ),
@@ -272,17 +269,19 @@ class _AmbientSoundSheetState extends State<AmbientSoundSheet>
                 final isSelected = _sound == sound;
 
                 return InkWell(
-                  onTap: () {
+                  onTap: () async {
                     setState(() {
                       _sound = sound;
                       _enabled = true;
                     });
                     widget.onSoundSelected(sound);
                     widget.onToggle(true);
+                    await AudioPlayerService.instance.play(sound, _volume);
                   },
                   borderRadius: BorderRadius.circular(16),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
                     decoration: BoxDecoration(
                       color: isSelected
                           ? sound.color.withValues(alpha: isDark ? 0.2 : 0.1)
@@ -294,8 +293,10 @@ class _AmbientSoundSheetState extends State<AmbientSoundSheet>
                         color: isSelected
                             ? sound.color
                             : (isDark
-                                ? AppColors.darkOutlineVariant.withValues(alpha: 0.3)
-                                : AppColors.outlineVariant.withValues(alpha: 0.3)),
+                                ? AppColors.darkOutlineVariant
+                                    .withValues(alpha: 0.3)
+                                : AppColors.outlineVariant
+                                    .withValues(alpha: 0.3)),
                         width: isSelected ? 1.5 : 0.5,
                       ),
                     ),
@@ -321,7 +322,9 @@ class _AmbientSoundSheetState extends State<AmbientSoundSheet>
                                   fontWeight: FontWeight.bold,
                                   color: isSelected
                                       ? sound.color
-                                      : (isDark ? AppColors.darkOnSurface : AppColors.onSurface),
+                                      : (isDark
+                                          ? AppColors.darkOnSurface
+                                          : AppColors.onSurface),
                                 ),
                               ),
                               const SizedBox(height: 2),
@@ -338,7 +341,8 @@ class _AmbientSoundSheetState extends State<AmbientSoundSheet>
                           ),
                         ),
                         if (isSelected && _enabled)
-                          Icon(Icons.check_circle_rounded, color: sound.color, size: 22),
+                          Icon(Icons.check_circle_rounded,
+                              color: sound.color, size: 22),
                       ],
                     ),
                   ),

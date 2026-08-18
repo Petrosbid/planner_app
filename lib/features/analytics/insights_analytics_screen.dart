@@ -126,7 +126,7 @@ class _InsightsAnalyticsScreenState extends State<InsightsAnalyticsScreen> with 
                                   duration: const Duration(milliseconds: 700),
                                   builder: (context, v, _) => Text(
                                     '${ZedDateUtils.toFaDigits(v.round(), fa: isFa)}٪',
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                       fontSize: 26,
                                       fontWeight: FontWeight.bold,
                                       color: AppColors.success,
@@ -358,29 +358,29 @@ class _InsightsAnalyticsScreenState extends State<InsightsAnalyticsScreen> with 
   Widget _buildSkeleton() {
     return ListView(
       padding: const EdgeInsets.all(20),
-      children: [
+      children: const [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
+              children: [
                 SkeletonLine(width: 150, height: 22),
                 SizedBox(height: 8),
                 SkeletonLine(width: 180, height: 12),
               ],
             ),
-            const SkeletonCircle(size: 40),
+            SkeletonCircle(size: 40),
           ],
         ),
-        const SizedBox(height: 20),
+        SizedBox(height: 20),
         Row(
           children: [
             Expanded(
               child: SkeletonCard(
                 radius: 24,
                 child: Column(
-                  children: const [
+                  children: [
                     SkeletonLine(width: 80, height: 10),
                     SizedBox(height: 12),
                     SkeletonLine(width: 56, height: 24),
@@ -388,12 +388,12 @@ class _InsightsAnalyticsScreenState extends State<InsightsAnalyticsScreen> with 
                 ),
               ),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             Expanded(
               child: SkeletonCard(
                 radius: 24,
                 child: Column(
-                  children: const [
+                  children: [
                     SkeletonLine(width: 90, height: 10),
                     SizedBox(height: 12),
                     SkeletonLine(width: 56, height: 24),
@@ -403,17 +403,17 @@ class _InsightsAnalyticsScreenState extends State<InsightsAnalyticsScreen> with 
             ),
           ],
         ),
-        const SizedBox(height: 20),
+        SizedBox(height: 20),
         SkeletonCard(
           radius: 24,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SkeletonLine(width: 160, height: 14),
-              const SizedBox(height: 20),
+              SkeletonLine(width: 160, height: 14),
+              SizedBox(height: 20),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: const [
+                children: [
                   SkeletonCircle(size: 120),
                   SkeletonLine(width: 100, height: 12),
                 ],

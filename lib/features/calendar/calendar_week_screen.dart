@@ -22,7 +22,8 @@ class CalendarWeekScreen extends StatefulWidget {
   State<CalendarWeekScreen> createState() => _CalendarWeekScreenState();
 }
 
-class _CalendarWeekScreenState extends State<CalendarWeekScreen> with SimulatedFetchMixin {
+class _CalendarWeekScreenState extends State<CalendarWeekScreen>
+    with SimulatedFetchMixin {
   static const double _rowHeight = 64;
   static const int _firstHour = 0;
   static const int _lastHour = 23;
@@ -30,7 +31,11 @@ class _CalendarWeekScreenState extends State<CalendarWeekScreen> with SimulatedF
 
   String _selectedView = '3-Day'; // Day, 3-Day, Week, Month
   late DateTime _selectedDay;
+  late DateTime _displayedMonth;
   bool _bannerDismissed = false;
+  TimeBlockItem? _draggingBlock;
+  double _originalStartHour = 0;
+  bool _isOverlapping = false;
   late final ScrollController _scrollController;
   Timer? _nowTicker;
   DateTime _now = DateTime.now();
@@ -39,6 +44,7 @@ class _CalendarWeekScreenState extends State<CalendarWeekScreen> with SimulatedF
   void initState() {
     super.initState();
     _selectedDay = DateTime.now();
+    _displayedMonth = DateTime(_selectedDay.year, _selectedDay.month, 1);
     _scrollController = ScrollController();
     startSimulatedFetch();
     _nowTicker = Timer.periodic(const Duration(seconds: 60), (_) {
@@ -57,7 +63,8 @@ class _CalendarWeekScreenState extends State<CalendarWeekScreen> with SimulatedF
     if (!mounted || !_scrollController.hasClients) return;
     if (_now.hour < _firstHour || _now.hour > _lastHour) return;
     _scrollController.jumpTo(
-      ((_now.hour - _firstHour) * _rowHeight).clamp(0.0, _scrollController.position.maxScrollExtent),
+      ((_now.hour - _firstHour) * _rowHeight)
+          .clamp(0.0, _scrollController.position.maxScrollExtent),
     );
   }
 
@@ -66,7 +73,8 @@ class _CalendarWeekScreenState extends State<CalendarWeekScreen> with SimulatedF
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToNow());
   }
 
-  double get _plannedHours => AppScope.of(context).store.plannedHoursForDay(_selectedDay);
+  double get _plannedHours =>
+      AppScope.of(context).store.plannedHoursForDay(_selectedDay);
 
   bool get _isOverloaded => _plannedHours > _usefulCapacityHours;
 
@@ -158,7 +166,9 @@ class _CalendarWeekScreenState extends State<CalendarWeekScreen> with SimulatedF
     return ChoiceChip(
       label: Text(
         label,
-        style: TextStyle(fontSize: 12, color: isSelected ? Colors.white : AppColors.onSurfaceVariant),
+        style: TextStyle(
+            fontSize: 12,
+            color: isSelected ? Colors.white : AppColors.onSurfaceVariant),
       ),
       selected: isSelected,
       selectedColor: AppColors.primary,
@@ -187,16 +197,21 @@ class _CalendarWeekScreenState extends State<CalendarWeekScreen> with SimulatedF
           return GestureDetector(
             onTap: () => setState(() {
               _selectedDay = day;
+              _displayedMonth = DateTime(day.year, day.month, 1);
               _bannerDismissed = false;
             }),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               width: 52,
               decoration: BoxDecoration(
-                color: isSelected ? AppColors.primary : AppColors.surfaceContainerLow,
+                color: isSelected
+                    ? AppColors.primary
+                    : AppColors.surfaceContainerLow,
                 borderRadius: BorderRadius.circular(16),
                 border: (!isSelected && isToday)
-                    ? Border.all(color: AppColors.primary.withValues(alpha: 0.5), width: 1.5)
+                    ? Border.all(
+                        color: AppColors.primary.withValues(alpha: 0.5),
+                        width: 1.5)
                     : null,
               ),
               child: Column(
@@ -207,7 +222,9 @@ class _CalendarWeekScreenState extends State<CalendarWeekScreen> with SimulatedF
                     ZedDateUtils.weekday(day, fa: isFa, short: true),
                     style: TextStyle(
                       fontSize: 12,
-                      color: isSelected ? Colors.white : AppColors.onSurfaceVariant,
+                      color: isSelected
+                          ? Colors.white
+                          : AppColors.onSurfaceVariant,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -230,7 +247,8 @@ class _CalendarWeekScreenState extends State<CalendarWeekScreen> with SimulatedF
 
   // ---------- capacity banner ----------
 
-  Widget _buildCapacityBanner(AppLocalizations l10n, bool isFa, bool useJalali) {
+  Widget _buildCapacityBanner(
+      AppLocalizations l10n, bool isFa, bool useJalali) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Material(
@@ -243,16 +261,21 @@ class _CalendarWeekScreenState extends State<CalendarWeekScreen> with SimulatedF
             padding: const EdgeInsets.fromLTRB(12, 10, 4, 10),
             child: Row(
               children: [
-                const Icon(Icons.warning_amber_rounded, color: AppColors.error, size: 20),
+                const Icon(Icons.warning_amber_rounded,
+                    color: AppColors.error, size: 20),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     '${l10n.translate('capacityWarning')}: ${ZedDateUtils.toFaDigits(_plannedHours.toStringAsFixed(1), fa: isFa)} ${l10n.translate('hoursUnit')} (${l10n.translate('usefulCapacity')}: ${ZedDateUtils.toFaDigits(_usefulCapacityHours, fa: isFa)})',
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.error),
+                    style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.error),
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close_rounded, size: 18, color: AppColors.error),
+                  icon: const Icon(Icons.close_rounded,
+                      size: 18, color: AppColors.error),
                   onPressed: () => setState(() => _bannerDismissed = true),
                 ),
               ],
@@ -265,7 +288,8 @@ class _CalendarWeekScreenState extends State<CalendarWeekScreen> with SimulatedF
 
   // ---------- body per view ----------
 
-  Widget _buildBody(AppLocalizations l10n, PlannerStore store, bool isFa, bool useJalali) {
+  Widget _buildBody(
+      AppLocalizations l10n, PlannerStore store, bool isFa, bool useJalali) {
     switch (_selectedView) {
       case 'Month':
         return _buildMonthView(l10n, store, isFa, useJalali);
@@ -276,11 +300,12 @@ class _CalendarWeekScreenState extends State<CalendarWeekScreen> with SimulatedF
     }
   }
 
-  Widget _buildTimeline(AppLocalizations l10n, PlannerStore store, bool isFa, bool useJalali) {
+  Widget _buildTimeline(
+      AppLocalizations l10n, PlannerStore store, bool isFa, bool useJalali) {
     final blocks = store.blocksForDay(_selectedDay);
     if (blocks.isEmpty) return _emptyBlocks(l10n, isFa, useJalali);
 
-    final rows = _lastHour - _firstHour + 1;
+    const rows = _lastHour - _firstHour + 1;
     return SingleChildScrollView(
       controller: _scrollController,
       key: const ValueKey('timeline'),
@@ -304,29 +329,24 @@ class _CalendarWeekScreenState extends State<CalendarWeekScreen> with SimulatedF
                       child: Padding(
                         padding: const EdgeInsets.only(top: 2),
                         child: Text(
-                          ZedDateUtils.hourLabel((_firstHour + i).toDouble(), fa: isFa),
-                          style: TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant),
+                          ZedDateUtils.hourLabel((_firstHour + i).toDouble(),
+                              fa: isFa),
+                          style: TextStyle(
+                              fontSize: 12, color: AppColors.onSurfaceVariant),
                         ),
                       ),
                     ),
                     Expanded(
-                      child: Divider(height: 1, thickness: 0.5, color: AppColors.outlineVariant),
+                      child: Divider(
+                          height: 1,
+                          thickness: 0.5,
+                          color: AppColors.outlineVariant),
                     ),
                   ],
                 ),
               ),
             for (final tb in blocks)
-              Positioned(
-                top: (tb.startHour - _firstHour) * _rowHeight + 2,
-                height: tb.durationHours * _rowHeight - 4,
-                left: 56,
-                right: 0,
-                child: FadeSlideIn(
-                  key: ValueKey(tb.id),
-                  duration: const Duration(milliseconds: 300),
-                  child: _buildTimeBlock(tb, l10n, isFa, useJalali),
-                ),
-              ),
+              _buildTimelineBlock(tb, l10n, store, isFa, useJalali),
             if (ZedDateUtils.isToday(_selectedDay))
               Positioned(
                 top: (_now.hour + _now.minute / 60 - _firstHour) * _rowHeight,
@@ -337,9 +357,12 @@ class _CalendarWeekScreenState extends State<CalendarWeekScreen> with SimulatedF
                     Container(
                       width: 10,
                       height: 10,
-                      decoration: const BoxDecoration(color: AppColors.error, shape: BoxShape.circle),
+                      decoration: const BoxDecoration(
+                          color: AppColors.error, shape: BoxShape.circle),
                     ),
-                    const Expanded(child: Divider(height: 2, thickness: 2, color: AppColors.error)),
+                    const Expanded(
+                        child: Divider(
+                            height: 2, thickness: 2, color: AppColors.error)),
                   ],
                 ),
               ),
@@ -349,16 +372,94 @@ class _CalendarWeekScreenState extends State<CalendarWeekScreen> with SimulatedF
     );
   }
 
-  Widget _buildTimeBlock(TimeBlockItem tb, AppLocalizations l10n, bool isFa, bool useJalali) {
+  Widget _buildTimelineBlock(
+    TimeBlockItem tb,
+    AppLocalizations l10n,
+    PlannerStore store,
+    bool isFa,
+    bool useJalali,
+  ) {
+    final isDragging = _draggingBlock?.id == tb.id;
+    final overlap = isDragging && _isOverlapping;
+
+    return Positioned(
+      top: (tb.startHour - _firstHour) * _rowHeight + 2,
+      height: tb.durationHours * _rowHeight - 4,
+      left: 56,
+      right: 0,
+      child: GestureDetector(
+        onLongPressStart: (_) {
+          setState(() {
+            _draggingBlock = tb;
+            _originalStartHour = tb.startHour;
+            _isOverlapping = false;
+          });
+        },
+        onLongPressMoveUpdate: (details) {
+          if (_draggingBlock?.id != tb.id) return;
+          final snappedDelta =
+              ((details.offsetFromOrigin.dy / _rowHeight) * 4).round() / 4.0;
+          final maxStart = (_lastHour + 1) - tb.durationHours;
+          final nextStart = (_originalStartHour + snappedDelta)
+              .clamp(_firstHour.toDouble(), maxStart);
+          final conflict = store.conflictingBlock(
+            _selectedDay,
+            nextStart,
+            tb.durationHours,
+            excludeBlockId: tb.id,
+          );
+          setState(() {
+            tb.startHour = nextStart;
+            _isOverlapping = conflict != null;
+          });
+        },
+        onLongPressEnd: (_) {
+          if (_draggingBlock?.id != tb.id) return;
+          if (_isOverlapping) {
+            setState(() {
+              tb.startHour = _originalStartHour;
+              _draggingBlock = null;
+              _isOverlapping = false;
+            });
+            return;
+          }
+
+          store.updateBlock(tb);
+          setState(() {
+            _draggingBlock = null;
+            _isOverlapping = false;
+          });
+        },
+        child: FadeSlideIn(
+          key: ValueKey(tb.id),
+          duration: const Duration(milliseconds: 300),
+          child: _buildTimeBlock(tb, l10n, isFa, useJalali, overlap: overlap),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTimeBlock(
+    TimeBlockItem tb,
+    AppLocalizations l10n,
+    bool isFa,
+    bool useJalali, {
+    bool overlap = false,
+  }) {
     final color = Color(tb.colorValue);
+    final bgColor = overlap
+        ? AppColors.error.withValues(alpha: 0.18)
+        : color.withValues(alpha: 0.15);
+    final edgeColor = overlap ? AppColors.error : color;
+
     return GestureDetector(
       onTap: () => _showBlockDetailsSheet(tb, l10n, isFa, useJalali),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.15),
+          color: bgColor,
           borderRadius: BorderRadius.circular(12),
-          border: Border(right: BorderSide(color: color, width: 4)),
+          border: Border(right: BorderSide(color: edgeColor, width: 4)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -374,14 +475,18 @@ class _CalendarWeekScreenState extends State<CalendarWeekScreen> with SimulatedF
                       fontSize: 13,
                       fontWeight: FontWeight.bold,
                       decoration: tb.isDone ? TextDecoration.lineThrough : null,
-                      color: tb.isDone ? AppColors.onSurfaceVariant : AppColors.onSurface,
+                      color: tb.isDone
+                          ? AppColors.onSurfaceVariant
+                          : AppColors.onSurface,
                     ),
                   ),
                 ),
                 if (tb.hasOutcome) ...[
                   const SizedBox(width: 4),
                   Icon(
-                    tb.isDone ? Icons.check_circle_rounded : Icons.cancel_rounded,
+                    tb.isDone
+                        ? Icons.check_circle_rounded
+                        : Icons.cancel_rounded,
                     size: 14,
                     color: tb.isDone ? AppColors.success : AppColors.error,
                   ),
@@ -390,10 +495,12 @@ class _CalendarWeekScreenState extends State<CalendarWeekScreen> with SimulatedF
             ),
             if (tb.durationHours >= 0.75)
               Text(
-                ZedDateUtils.rangeLabel(tb.startHour, tb.durationHours, fa: isFa),
+                ZedDateUtils.rangeLabel(tb.startHour, tb.durationHours,
+                    fa: isFa),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant),
+                style:
+                    TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant),
               ),
           ],
         ),
@@ -408,11 +515,16 @@ class _CalendarWeekScreenState extends State<CalendarWeekScreen> with SimulatedF
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.event_available_rounded, size: 56, color: AppColors.onSurfaceVariant),
+            Icon(Icons.event_available_rounded,
+                size: 56, color: AppColors.onSurfaceVariant),
             const SizedBox(height: 16),
-            Text(l10n.translate('emptyBlocksCalendar'), style: AppTypography.headlineMd()),
+            Text(l10n.translate('emptyBlocksCalendar'),
+                style: AppTypography.headlineMd()),
             const SizedBox(height: 8),
-            Text(ZedDateUtils.fullDate(_selectedDay, fa: isFa, jalali: useJalali), style: AppTypography.bodySm()),
+            Text(
+                ZedDateUtils.fullDate(_selectedDay,
+                    fa: isFa, jalali: useJalali),
+                style: AppTypography.bodySm()),
             const SizedBox(height: 20),
             FilledButton.icon(
               onPressed: () => _showAddBlockSheet(l10n),
@@ -427,9 +539,11 @@ class _CalendarWeekScreenState extends State<CalendarWeekScreen> with SimulatedF
 
   // ---------- 3-day & month ----------
 
-  Widget _buildThreeDayView(AppLocalizations l10n, PlannerStore store, bool isFa, bool useJalali) {
+  Widget _buildThreeDayView(
+      AppLocalizations l10n, PlannerStore store, bool isFa, bool useJalali) {
     final days = [0, 1, 2]
-        .map((i) => DateTime(_selectedDay.year, _selectedDay.month, _selectedDay.day + i))
+        .map((i) => DateTime(
+            _selectedDay.year, _selectedDay.month, _selectedDay.day + i))
         .toList();
     return ListView(
       key: const ValueKey('three-day'),
@@ -440,7 +554,9 @@ class _CalendarWeekScreenState extends State<CalendarWeekScreen> with SimulatedF
           children: [
             for (var i = 0; i < days.length; i++) ...[
               if (i > 0) const SizedBox(width: 8),
-              Expanded(child: _buildThreeDayColumn(days[i], l10n, store, isFa, useJalali)),
+              Expanded(
+                  child: _buildThreeDayColumn(
+                      days[i], l10n, store, isFa, useJalali)),
             ],
           ],
         ),
@@ -448,7 +564,8 @@ class _CalendarWeekScreenState extends State<CalendarWeekScreen> with SimulatedF
     );
   }
 
-  Widget _buildThreeDayColumn(DateTime day, AppLocalizations l10n, PlannerStore store, bool isFa, bool useJalali) {
+  Widget _buildThreeDayColumn(DateTime day, AppLocalizations l10n,
+      PlannerStore store, bool isFa, bool useJalali) {
     final blocks = store.blocksForDay(day);
     final isSelected = ZedDateUtils.isSameDay(day, _selectedDay);
     return GestureDetector(
@@ -456,7 +573,8 @@ class _CalendarWeekScreenState extends State<CalendarWeekScreen> with SimulatedF
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.surfaceContainerLow : Colors.transparent,
+          color:
+              isSelected ? AppColors.surfaceContainerLow : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: AppColors.outlineVariant, width: 0.5),
         ),
@@ -466,23 +584,31 @@ class _CalendarWeekScreenState extends State<CalendarWeekScreen> with SimulatedF
           children: [
             Text(
               '${ZedDateUtils.weekday(day, fa: isFa, short: true)} ${ZedDateUtils.dayNumber(day, fa: isFa, jalali: useJalali)}',
-              style: AppTypography.labelCaps(color: isSelected ? AppColors.primary : AppColors.onSurfaceVariant),
+              style: AppTypography.labelCaps(
+                  color: isSelected
+                      ? AppColors.primary
+                      : AppColors.onSurfaceVariant),
             ),
             const SizedBox(height: 8),
             if (blocks.isEmpty)
-              Text(l10n.translate('noCategoryData'), style: AppTypography.bodySm())
+              Text(l10n.translate('noCategoryData'),
+                  style: AppTypography.bodySm())
             else
               for (final tb in blocks)
                 GestureDetector(
-                  onTap: () => _showBlockDetailsSheet(tb, l10n, isFa, useJalali),
+                  onTap: () =>
+                      _showBlockDetailsSheet(tb, l10n, isFa, useJalali),
                   child: Container(
                     width: double.infinity,
                     margin: const EdgeInsets.only(bottom: 8),
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                     decoration: BoxDecoration(
                       color: Color(tb.colorValue).withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(10),
-                      border: Border(right: BorderSide(color: Color(tb.colorValue), width: 3)),
+                      border: Border(
+                          right: BorderSide(
+                              color: Color(tb.colorValue), width: 3)),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -491,11 +617,17 @@ class _CalendarWeekScreenState extends State<CalendarWeekScreen> with SimulatedF
                           tb.title,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.onSurface),
+                          style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.onSurface),
                         ),
                         Text(
-                          ZedDateUtils.rangeLabel(tb.startHour, tb.durationHours, fa: isFa),
-                          style: TextStyle(fontSize: 10, color: AppColors.onSurfaceVariant),
+                          ZedDateUtils.rangeLabel(
+                              tb.startHour, tb.durationHours,
+                              fa: isFa),
+                          style: TextStyle(
+                              fontSize: 10, color: AppColors.onSurfaceVariant),
                         ),
                       ],
                     ),
@@ -507,11 +639,12 @@ class _CalendarWeekScreenState extends State<CalendarWeekScreen> with SimulatedF
     );
   }
 
-  Widget _buildMonthView(AppLocalizations l10n, PlannerStore store, bool isFa, bool useJalali) {
-    final now = DateTime.now();
-    // The current month in the user's calendar system (Jalali or Gregorian).
-    final firstOfMonth = ZedDateUtils.monthStart(now, jalali: useJalali);
-    final daysInMonth = ZedDateUtils.daysInMonth(now, jalali: useJalali);
+  Widget _buildMonthView(
+      AppLocalizations l10n, PlannerStore store, bool isFa, bool useJalali) {
+    final firstOfMonth =
+        ZedDateUtils.monthStart(_displayedMonth, jalali: useJalali);
+    final daysInMonth =
+        ZedDateUtils.daysInMonthFor(_displayedMonth, jalali: useJalali);
     final leading = (firstOfMonth.weekday + 1) % 7; // Sat-start offset
     final allBlocks = store.blocks;
 
@@ -521,9 +654,38 @@ class _CalendarWeekScreenState extends State<CalendarWeekScreen> with SimulatedF
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            ZedDateUtils.monthYearHeader(now, fa: isFa, jalali: useJalali),
-            style: AppTypography.headlineMd(),
+          Row(
+            children: [
+              IconButton(
+                onPressed: () => setState(() {
+                  _displayedMonth = ZedDateUtils.monthAdd(_displayedMonth, -1,
+                      jalali: useJalali);
+                }),
+                icon: const Icon(Icons.arrow_back_rounded),
+              ),
+              Expanded(
+                child: InkWell(
+                  onTap: () => setState(() {
+                    final now = DateTime.now();
+                    _displayedMonth = DateTime(now.year, now.month, 1);
+                    _selectedDay = now;
+                  }),
+                  child: Text(
+                    ZedDateUtils.monthYearHeader(_displayedMonth,
+                        fa: isFa, jalali: useJalali),
+                    style: AppTypography.headlineMd(),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+              IconButton(
+                onPressed: () => setState(() {
+                  _displayedMonth = ZedDateUtils.monthAdd(_displayedMonth, 1,
+                      jalali: useJalali);
+                }),
+                icon: const Icon(Icons.arrow_forward_rounded),
+              ),
+            ],
           ),
           const SizedBox(height: 12),
           GridView.builder(
@@ -538,45 +700,95 @@ class _CalendarWeekScreenState extends State<CalendarWeekScreen> with SimulatedF
             itemBuilder: (ctx, index) {
               if (index < leading) return const SizedBox.shrink();
               final date = firstOfMonth.add(Duration(days: index - leading));
-              final count = allBlocks.where((b) => ZedDateUtils.isSameDay(b.date, date)).length;
+              final dayBlocks = allBlocks
+                  .where((b) => ZedDateUtils.isSameDay(b.date, date))
+                  .toList();
+              final count = dayBlocks.length;
               final isSelected = ZedDateUtils.isSameDay(date, _selectedDay);
               final isToday = ZedDateUtils.isToday(date);
               return GestureDetector(
                 onTap: () => setState(() {
                   _selectedDay = date;
+                  _displayedMonth = DateTime(date.year, date.month, 1);
                   _selectedView = 'Day';
                 }),
                 child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
                   decoration: BoxDecoration(
-                    color: isSelected ? AppColors.primary : AppColors.surfaceContainerLow,
+                    color: isSelected
+                        ? AppColors.primary
+                        : AppColors.surfaceContainerLow,
                     borderRadius: BorderRadius.circular(10),
                     border: isToday && !isSelected
-                        ? Border.all(color: AppColors.primary.withValues(alpha: 0.5), width: 1.5)
+                        ? Border.all(
+                            color: AppColors.primary.withValues(alpha: 0.5),
+                            width: 1.5)
                         : null,
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        ZedDateUtils.dayNumber(date, fa: isFa, jalali: useJalali),
+                        ZedDateUtils.dayNumber(date,
+                            fa: isFa, jalali: useJalali),
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
-                          color: isSelected ? Colors.white : AppColors.onSurface,
+                          color:
+                              isSelected ? Colors.white : AppColors.onSurface,
                         ),
                       ),
+                      const SizedBox(height: 2),
+                      if (count > 0)
+                        Text(
+                          l10n.translate('tasksCountShort').replaceAll(
+                              '%s', ZedDateUtils.toFaDigits(count, fa: isFa)),
+                          style: TextStyle(
+                            fontSize: 9,
+                            color: isSelected
+                                ? Colors.white
+                                : AppColors.onSurfaceVariant,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      if (count > 0)
+                        Container(
+                          margin: const EdgeInsets.only(top: 2),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? Colors.white24
+                                : AppColors.primary.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            ZedDateUtils.toFaDigits(count, fa: isFa),
+                            style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                              color:
+                                  isSelected ? Colors.white : AppColors.primary,
+                            ),
+                          ),
+                        ),
                       const SizedBox(height: 2),
                       SizedBox(
                         height: 5,
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            for (var i = 0; i < min(count, 3); i++)
+                            for (final b in dayBlocks.take(min(count, 3)))
                               Container(
                                 width: 4,
                                 height: 4,
-                                margin: const EdgeInsets.symmetric(horizontal: 1),
-                                decoration: BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
+                                margin:
+                                    const EdgeInsets.symmetric(horizontal: 1),
+                                decoration: BoxDecoration(
+                                    color: Color(b.colorValue),
+                                    shape: BoxShape.circle),
                               ),
                           ],
                         ),
@@ -600,7 +812,8 @@ class _CalendarWeekScreenState extends State<CalendarWeekScreen> with SimulatedF
     BlockFormSheet.show(context, initialDate: _selectedDay);
   }
 
-  void _showBlockDetailsSheet(TimeBlockItem tb, AppLocalizations l10n, bool isFa, bool useJalali) {
+  void _showBlockDetailsSheet(
+      TimeBlockItem tb, AppLocalizations l10n, bool isFa, bool useJalali) {
     final store = AppScope.of(context).store;
     showModalBottomSheet(
       context: context,
@@ -620,23 +833,27 @@ class _CalendarWeekScreenState extends State<CalendarWeekScreen> with SimulatedF
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
                       color: Color(tb.colorValue).withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: Text(_categoryLabel(tb.category, l10n), style: AppTypography.labelCaps()),
+                    child: Text(_categoryLabel(tb.category, l10n),
+                        style: AppTypography.labelCaps()),
                   ),
                 ],
               ),
               const SizedBox(height: 12),
               Text(tb.title, style: AppTypography.headlineMd()),
               const SizedBox(height: 8),
-              Text(ZedDateUtils.fullDate(tb.date, fa: isFa, jalali: useJalali), style: AppTypography.bodySm()),
+              Text(ZedDateUtils.fullDate(tb.date, fa: isFa, jalali: useJalali),
+                  style: AppTypography.bodySm()),
               const SizedBox(height: 16),
               Row(
                 children: [
-                  Icon(Icons.schedule_rounded, size: 18, color: AppColors.onSurfaceVariant),
+                  Icon(Icons.schedule_rounded,
+                      size: 18, color: AppColors.onSurfaceVariant),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -648,7 +865,8 @@ class _CalendarWeekScreenState extends State<CalendarWeekScreen> with SimulatedF
               ),
               const SizedBox(height: 20),
               // Outcome: done / not done (not done records a reason).
-              Text(l10n.translate('outcomeSection'), style: AppTypography.labelCaps()),
+              Text(l10n.translate('outcomeSection'),
+                  style: AppTypography.labelCaps()),
               const SizedBox(height: 8),
               Row(
                 children: [
@@ -680,7 +898,8 @@ class _CalendarWeekScreenState extends State<CalendarWeekScreen> with SimulatedF
                         tb.hasOutcome = true;
                         store.updateBlock(tb);
                         Navigator.of(ctx).pop();
-                        DistractionReasonSheet.show(context, relatedTitle: tb.title);
+                        DistractionReasonSheet.show(context,
+                            relatedTitle: tb.title);
                       },
                     ),
                   ),
@@ -707,7 +926,8 @@ class _CalendarWeekScreenState extends State<CalendarWeekScreen> with SimulatedF
                       if (!ctx.mounted) return;
                       Navigator.of(ctx).pop();
                     },
-                    icon: const Icon(Icons.delete_outline_rounded, size: 20, color: AppColors.error),
+                    icon: const Icon(Icons.delete_outline_rounded,
+                        size: 20, color: AppColors.error),
                   ),
                 ],
               ),
@@ -733,12 +953,15 @@ class _CalendarWeekScreenState extends State<CalendarWeekScreen> with SimulatedF
         style: OutlinedButton.styleFrom(
           foregroundColor: selected ? Colors.white : color,
           backgroundColor: selected ? color : color.withValues(alpha: 0.08),
-          side: BorderSide(color: selected ? color : color.withValues(alpha: 0.4)),
+          side: BorderSide(
+              color: selected ? color : color.withValues(alpha: 0.4)),
           padding: const EdgeInsets.symmetric(vertical: 12),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         ),
         icon: Icon(icon, size: 18),
-        label: Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+        label: Text(label,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
       ),
     );
   }
@@ -751,7 +974,9 @@ class _CalendarWeekScreenState extends State<CalendarWeekScreen> with SimulatedF
         title: Text(l10n.translate('edit')),
         content: TextField(controller: controller, autofocus: true),
         actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: Text(l10n.translate('cancel'))),
+          TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: Text(l10n.translate('cancel'))),
           FilledButton(
             onPressed: () {
               final text = controller.text.trim();
@@ -787,7 +1012,8 @@ class _CalendarWeekScreenState extends State<CalendarWeekScreen> with SimulatedF
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(l10n.translate('capacityBreakdown'), style: AppTypography.headlineMd()),
+              Text(l10n.translate('capacityBreakdown'),
+                  style: AppTypography.headlineMd()),
               const SizedBox(height: 20),
               _capacityRow(
                 l10n.translate('plannedTime'),
@@ -803,7 +1029,8 @@ class _CalendarWeekScreenState extends State<CalendarWeekScreen> with SimulatedF
                 1.0,
               ),
               const SizedBox(height: 20),
-              Text(l10n.translate('categorySplit'), style: AppTypography.labelCaps()),
+              Text(l10n.translate('categorySplit'),
+                  style: AppTypography.labelCaps()),
               const SizedBox(height: 8),
               for (final tb in blocks)
                 Padding(
@@ -813,11 +1040,16 @@ class _CalendarWeekScreenState extends State<CalendarWeekScreen> with SimulatedF
                       Container(
                         width: 10,
                         height: 10,
-                        decoration: BoxDecoration(color: Color(tb.colorValue), shape: BoxShape.circle),
+                        decoration: BoxDecoration(
+                            color: Color(tb.colorValue),
+                            shape: BoxShape.circle),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
-                        child: Text(tb.title, style: AppTypography.bodySm(), maxLines: 1, overflow: TextOverflow.ellipsis),
+                        child: Text(tb.title,
+                            style: AppTypography.bodySm(),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis),
                       ),
                       Text(
                         '${ZedDateUtils.toFaDigits(tb.durationHours, fa: isFa)} ${l10n.translate('hoursUnit')}',
@@ -841,7 +1073,8 @@ class _CalendarWeekScreenState extends State<CalendarWeekScreen> with SimulatedF
     );
   }
 
-  Widget _capacityRow(String label, String value, Color color, double fraction) {
+  Widget _capacityRow(
+      String label, String value, Color color, double fraction) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -879,7 +1112,7 @@ class _CalendarWeekScreenState extends State<CalendarWeekScreen> with SimulatedF
               const SkeletonLine(width: 120, height: 22),
               const Spacer(),
               for (var i = 0; i < 3; i++) ...[
-                SkeletonLine(width: 44, height: 28, borderRadius: 14),
+                const SkeletonLine(width: 44, height: 28, borderRadius: 14),
                 const SizedBox(width: 6),
               ],
             ],
@@ -892,12 +1125,12 @@ class _CalendarWeekScreenState extends State<CalendarWeekScreen> with SimulatedF
             padding: const EdgeInsets.symmetric(horizontal: 16),
             children: [
               for (var i = 0; i < 7; i++)
-                Padding(
-                  padding: const EdgeInsets.only(left: 8),
+                const Padding(
+                  padding: EdgeInsets.only(left: 8),
                   child: SkeletonCard(
                     radius: 16,
                     padding: EdgeInsets.zero,
-                    child: const SizedBox(
+                    child: SizedBox(
                       width: 52,
                       child: Center(child: SkeletonLine(width: 24, height: 26)),
                     ),
@@ -907,12 +1140,12 @@ class _CalendarWeekScreenState extends State<CalendarWeekScreen> with SimulatedF
           ),
         ),
         const SizedBox(height: 12),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16),
           child: SkeletonCard(
             radius: 16,
-            padding: const EdgeInsets.all(12),
-            child: const SkeletonLine(height: 12),
+            padding: EdgeInsets.all(12),
+            child: SkeletonLine(height: 12),
           ),
         ),
         const SizedBox(height: 12),
@@ -935,7 +1168,8 @@ class _CalendarWeekScreenState extends State<CalendarWeekScreen> with SimulatedF
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              SkeletonLine(width: 150 + (i % 3) * 40.0, height: 12),
+                              SkeletonLine(
+                                  width: 150 + (i % 3) * 40.0, height: 12),
                               const SizedBox(height: 8),
                               const SkeletonLine(width: 90, height: 10),
                             ],

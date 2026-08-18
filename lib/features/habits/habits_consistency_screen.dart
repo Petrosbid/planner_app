@@ -101,7 +101,7 @@ class _HabitsConsistencyScreenState extends State<HabitsConsistencyScreen> {
           const SizedBox(height: 8),
           Row(
             children: [
-              Icon(Icons.local_fire_department_outlined, size: 16, color: AppColors.warning),
+              const Icon(Icons.local_fire_department_outlined, size: 16, color: AppColors.warning),
               const SizedBox(width: 4),
               Text(
                 '${l10n.translate('streakLabel')}: ${ZedDateUtils.toFaDigits(streak, fa: isFa)} ${l10n.translate('day')}',

@@ -61,11 +61,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   // ---------- identity ----------
 
-  Widget _identityCard(AppLocalizations l10n, AppScope scope, bool isFa, bool useJalali) {
+  Widget _identityCard(
+      AppLocalizations l10n, AppScope scope, bool isFa, bool useJalali) {
     final name = scope.settings.userName;
     final initials = name.isEmpty
         ? '?'
-        : name.trim().split(' ').where((w) => w.isNotEmpty).map((w) => w[0]).take(2).join();
+        : name
+            .trim()
+            .split(' ')
+            .where((w) => w.isNotEmpty)
+            .map((w) => w[0])
+            .take(2)
+            .join();
     final isFa = l10n.isFa;
 
     return Container(
@@ -80,7 +87,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Container(
             width: 64,
             height: 64,
-            decoration: BoxDecoration(color: AppColors.primaryContainer, shape: BoxShape.circle),
+            decoration: BoxDecoration(
+                color: AppColors.primaryContainer, shape: BoxShape.circle),
             child: Center(
               child: Text(
                 initials,
@@ -105,7 +113,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  ZedDateUtils.fullDate(DateTime.now(), fa: isFa, jalali: useJalali),
+                  ZedDateUtils.fullDate(DateTime.now(),
+                      fa: isFa, jalali: useJalali),
                   style: AppTypography.bodySm(),
                 ),
               ],
@@ -121,7 +130,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Future<void> _showNameDialog(AppLocalizations l10n, AppSettings settings) async {
+  Future<void> _showNameDialog(
+      AppLocalizations l10n, AppSettings settings) async {
     final controller = TextEditingController(text: settings.userName);
     await showDialog(
       context: context,
@@ -159,7 +169,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _statsRow(AppLocalizations l10n, PlannerStore store, bool isFa) {
     final tasksDone = store.tasks.where((t) => t.isCompleted).length;
-    final focusMinutes = store.focusRecords.fold(0, (sum, r) => sum + r.minutes);
+    final focusMinutes =
+        store.focusRecords.fold(0, (sum, r) => sum + r.minutes);
     final bestStreak = store.habits.fold<int>(0, (best, h) {
       final s = store.habitStreak(h);
       return s > best ? s : best;
@@ -205,7 +216,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const SizedBox(height: 8),
             Text(
               value,
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color),
+              style: TextStyle(
+                  fontSize: 20, fontWeight: FontWeight.bold, color: color),
             ),
             const SizedBox(height: 4),
             Text(
@@ -262,7 +274,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     color: color,
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: isSelected ? AppColors.onSurface : Colors.transparent,
+                      color:
+                          isSelected ? AppColors.onSurface : Colors.transparent,
                       width: 2.5,
                     ),
                     boxShadow: [
@@ -274,7 +287,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ],
                   ),
                   child: isSelected
-                      ? const Icon(Icons.check_rounded, size: 18, color: Colors.white)
+                      ? const Icon(Icons.check_rounded,
+                          size: 18, color: Colors.white)
                       : null,
                 ),
               ),
@@ -300,21 +314,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
-            child: Text(l10n.translate('appearanceSection'), style: AppTypography.labelCaps()),
+            child: Text(l10n.translate('appearanceSection'),
+                style: AppTypography.labelCaps()),
           ),
           SwitchListTile(
             secondary: Icon(
-              _settings.themeMode == ThemeMode.dark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+              _settings.themeMode == ThemeMode.dark
+                  ? Icons.dark_mode_rounded
+                  : Icons.light_mode_rounded,
               color: AppColors.primary,
             ),
             title: Text(l10n.translate('darkMode')),
             value: _settings.themeMode == ThemeMode.dark,
-            onChanged: (v) => _settings.setThemeMode(v ? ThemeMode.dark : ThemeMode.light),
+            onChanged: (v) =>
+                _settings.setThemeMode(v ? ThemeMode.dark : ThemeMode.light),
           ),
           SwitchListTile(
-            secondary: Icon(Icons.notifications_active_outlined, color: AppColors.primary),
+            secondary: Icon(Icons.notifications_active_outlined,
+                color: AppColors.primary),
             title: Text(l10n.translate('notificationsLabel')),
-            subtitle: Text(l10n.translate('notificationsDesc'), style: AppTypography.bodySm().copyWith(fontSize: 11)),
+            subtitle: Text(l10n.translate('notificationsDesc'),
+                style: AppTypography.bodySm().copyWith(fontSize: 11)),
             isThreeLine: true,
             value: _settings.notificationsEnabled,
             onChanged: (v) async {
@@ -323,54 +343,162 @@ class _ProfileScreenState extends State<ProfileScreen> {
               await NotificationService.instance.setEnabled(v, store);
             },
           ),
+          SwitchListTile(
+            secondary: Icon(Icons.alarm_rounded, color: AppColors.primary),
+            title: Text(l10n.translate('blockEndAlarmLabel')),
+            subtitle: Text(l10n.translate('blockEndAlarmDesc'),
+                style: AppTypography.bodySm().copyWith(fontSize: 11)),
+            value: _settings.blockAlarmEnabled,
+            onChanged: (v) => _settings.setBlockAlarmEnabled(v),
+          ),
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
-            child: Text(l10n.translate('themeColor'), style: AppTypography.labelCaps()),
+            child: Text(l10n.translate('themeColor'),
+                style: AppTypography.labelCaps()),
           ),
           _colorPalette(),
           const SizedBox(height: 8),
           const Divider(height: 1, indent: 16, endIndent: 16),
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
-            child: Text(l10n.translate('calendarSection'), style: AppTypography.labelCaps()),
+            child: Text(l10n.translate('calendarSection'),
+                style: AppTypography.labelCaps()),
           ),
           ListTile(
             leading: Icon(Icons.today_rounded, color: AppColors.primary),
             title: Text(l10n.translate('jalaliLabel')),
-            trailing: _settings.useJalali ? Icon(Icons.check_rounded, color: AppColors.primary) : null,
+            trailing: _settings.useJalali
+                ? Icon(Icons.check_rounded, color: AppColors.primary)
+                : null,
             onTap: () => _settings.setUseJalali(true),
           ),
           ListTile(
-            leading: Icon(Icons.calendar_view_day_rounded, color: AppColors.primary),
+            leading:
+                Icon(Icons.calendar_view_day_rounded, color: AppColors.primary),
             title: Text(l10n.translate('gregorianLabel')),
-            trailing: !_settings.useJalali ? Icon(Icons.check_rounded, color: AppColors.primary) : null,
+            trailing: !_settings.useJalali
+                ? Icon(Icons.check_rounded, color: AppColors.primary)
+                : null,
             onTap: () => _settings.setUseJalali(false),
           ),
           const Divider(height: 1, indent: 16, endIndent: 16),
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
-            child: Text(l10n.translate('languageSection'), style: AppTypography.labelCaps()),
+            child: Text(l10n.translate('languageSection'),
+                style: AppTypography.labelCaps()),
           ),
           ListTile(
             leading: Icon(Icons.translate_rounded, color: AppColors.primary),
             title: Text(l10n.isFa ? 'فارسی' : 'Persian'),
-            trailing: l10n.isFa ? Icon(Icons.check_rounded, color: AppColors.primary) : null,
+            trailing: l10n.isFa
+                ? Icon(Icons.check_rounded, color: AppColors.primary)
+                : null,
             onTap: () => _settings.setLocale(const Locale('fa')),
           ),
           ListTile(
             leading: Icon(Icons.translate_rounded, color: AppColors.primary),
             title: const Text('English'),
-            trailing: !l10n.isFa ? Icon(Icons.check_rounded, color: AppColors.primary) : null,
+            trailing: !l10n.isFa
+                ? Icon(Icons.check_rounded, color: AppColors.primary)
+                : null,
             onTap: () => _settings.setLocale(const Locale('en')),
           ),
           const Divider(height: 1, indent: 16, endIndent: 16),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
+            child: Text(l10n.translate('securitySection'),
+                style: AppTypography.labelCaps()),
+          ),
+          SwitchListTile(
+            secondary:
+                Icon(Icons.lock_outline_rounded, color: AppColors.primary),
+            title: Text(l10n.translate('lockAppLabel')),
+            value: _settings.appLockEnabled,
+            onChanged: (v) => _settings.setAppLockEnabled(v),
+          ),
+          if (_settings.appLockEnabled)
+            SwitchListTile(
+              secondary:
+                  Icon(Icons.fingerprint_rounded, color: AppColors.primary),
+              title: Text(l10n.translate('biometricLabel')),
+              value: _settings.biometricLockEnabled,
+              onChanged: (v) => _settings.setBiometricLockEnabled(v),
+            ),
+          if (_settings.appLockEnabled)
+            ListTile(
+              leading: Icon(Icons.pin_outlined, color: AppColors.primary),
+              title: Text(l10n.translate('changePinLabel')),
+              onTap: () => _showPinDialog(l10n),
+            ),
+          const Divider(height: 1, indent: 16, endIndent: 16),
           ListTile(
-            leading: const Icon(Icons.delete_forever_outlined, color: AppColors.error),
-            title: Text(l10n.translate('resetData'), style: const TextStyle(color: AppColors.error)),
+            leading: const Icon(Icons.delete_forever_outlined,
+                color: AppColors.error),
+            title: Text(l10n.translate('resetData'),
+                style: const TextStyle(color: AppColors.error)),
             onTap: () => _confirmReset(l10n),
           ),
         ],
       ),
+    );
+  }
+
+  Future<void> _showPinDialog(AppLocalizations l10n) async {
+    final pinController = TextEditingController();
+    final confirmController = TextEditingController();
+
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.translate('changePinLabel')),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: pinController,
+              keyboardType: TextInputType.number,
+              maxLength: 4,
+              obscureText: true,
+              decoration:
+                  InputDecoration(labelText: l10n.translate('newPinLabel')),
+            ),
+            TextField(
+              controller: confirmController,
+              keyboardType: TextInputType.number,
+              maxLength: 4,
+              obscureText: true,
+              decoration:
+                  InputDecoration(labelText: l10n.translate('confirmPinLabel')),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: Text(l10n.translate('cancel'))),
+          FilledButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: Text(l10n.translate('save'))),
+        ],
+      ),
+    );
+
+    if (saved != true || !mounted) return;
+    final pin = pinController.text.trim();
+    final confirmPin = confirmController.text.trim();
+    final valid = RegExp(r'^\d{4}$').hasMatch(pin) && pin == confirmPin;
+
+    if (!valid) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.translate('pinValidationError'))),
+      );
+      return;
+    }
+
+    await _settings.setLockPin(pin);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(l10n.translate('pinSaved'))),
     );
   }
 
@@ -381,7 +509,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         title: Text(l10n.translate('resetConfirmTitle')),
         content: Text(l10n.translate('resetConfirmBody')),
         actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: Text(l10n.translate('cancel'))),
+          TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: Text(l10n.translate('cancel'))),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: AppColors.error),
             onPressed: () => Navigator.of(ctx).pop(true),
@@ -416,9 +546,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(l10n.translate('aboutSection'), style: AppTypography.labelCaps()),
+                Text(l10n.translate('aboutSection'),
+                    style: AppTypography.labelCaps()),
                 const SizedBox(height: 6),
-                Text(l10n.translate('aboutBody'), style: AppTypography.bodySm()),
+                Text(l10n.translate('aboutBody'),
+                    style: AppTypography.bodySm()),
               ],
             ),
           ),

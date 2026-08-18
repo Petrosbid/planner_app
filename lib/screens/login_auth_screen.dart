@@ -12,8 +12,10 @@ class LoginAuthScreen extends StatefulWidget {
 }
 
 class _LoginAuthScreenState extends State<LoginAuthScreen> {
-  final TextEditingController _emailController = TextEditingController(text: 'info@zenplan.com');
-  final TextEditingController _passwordController = TextEditingController(text: '••••••••');
+  final TextEditingController _emailController =
+      TextEditingController(text: 'info@zenplan.com');
+  final TextEditingController _passwordController =
+      TextEditingController(text: '••••••••');
 
   @override
   void dispose() {
@@ -29,7 +31,8 @@ class _LoginAuthScreenState extends State<LoginAuthScreen> {
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -42,13 +45,18 @@ class _LoginAuthScreenState extends State<LoginAuthScreen> {
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.primaryContainer.withValues(alpha: 0.4),
+                        color:
+                            AppColors.primaryContainer.withValues(alpha: 0.4),
                         blurRadius: 20,
                         offset: const Offset(0, 8),
                       ),
                     ],
                   ),
-                  child: const Icon(Icons.spa_rounded, color: Colors.white, size: 36),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Image.asset('assets/images/logo.png',
+                        fit: BoxFit.cover),
+                  ),
                 ),
                 const SizedBox(height: 16),
                 const Text(
@@ -63,29 +71,34 @@ class _LoginAuthScreenState extends State<LoginAuthScreen> {
                 const SizedBox(height: 6),
                 const Text(
                   'به فضای تمرکز خود خوش آمدید',
-                  style: TextStyle(fontSize: 15, color: AppColors.darkOnSurfaceVariant),
+                  style: TextStyle(
+                      fontSize: 15, color: AppColors.darkOnSurfaceVariant),
                 ),
                 const SizedBox(height: 32),
 
                 // Form Card
                 GlassCard(
-                  backgroundColor: AppColors.darkSurface.withValues(alpha: 0.85),
+                  backgroundColor:
+                      AppColors.darkSurface.withValues(alpha: 0.85),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
                         'ایمیل یا شماره موبایل',
-                        style: TextStyle(fontSize: 13, color: AppColors.darkOnSurfaceVariant),
+                        style: TextStyle(
+                            fontSize: 13,
+                            color: AppColors.darkOnSurfaceVariant),
                       ),
                       const SizedBox(height: 8),
                       TextField(
                         controller: _emailController,
                         style: const TextStyle(color: Colors.white),
-                        decoration: InputDecoration(
-                          prefixIcon: const Icon(Icons.person_outline, color: AppColors.darkOnSurfaceVariant),
+                        decoration: const InputDecoration(
+                          prefixIcon: Icon(Icons.person_outline,
+                              color: AppColors.darkOnSurfaceVariant),
                           fillColor: AppColors.darkSurfaceContainerLow,
                           hintText: 'نمونه: info@zenplan.com',
-                          hintStyle: const TextStyle(color: Colors.white38),
+                          hintStyle: TextStyle(color: Colors.white38),
                         ),
                       ),
                       const SizedBox(height: 20),
@@ -95,13 +108,17 @@ class _LoginAuthScreenState extends State<LoginAuthScreen> {
                         children: [
                           const Text(
                             'رمز عبور',
-                            style: TextStyle(fontSize: 13, color: AppColors.darkOnSurfaceVariant),
+                            style: TextStyle(
+                                fontSize: 13,
+                                color: AppColors.darkOnSurfaceVariant),
                           ),
                           GestureDetector(
                             onTap: () {},
                             child: const Text(
                               'رمز عبور را فراموش کرده‌اید؟',
-                              style: TextStyle(fontSize: 12, color: AppColors.primaryContainer),
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.primaryContainer),
                             ),
                           ),
                         ],
@@ -111,8 +128,9 @@ class _LoginAuthScreenState extends State<LoginAuthScreen> {
                         controller: _passwordController,
                         obscureText: true,
                         style: const TextStyle(color: Colors.white),
-                        decoration: InputDecoration(
-                          prefixIcon: const Icon(Icons.lock_outline, color: AppColors.darkOnSurfaceVariant),
+                        decoration: const InputDecoration(
+                          prefixIcon: Icon(Icons.lock_outline,
+                              color: AppColors.darkOnSurfaceVariant),
                           fillColor: AppColors.darkSurfaceContainerLow,
                         ),
                       ),
@@ -127,7 +145,10 @@ class _LoginAuthScreenState extends State<LoginAuthScreen> {
                           child: const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Text('ورود به حساب', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                              Text('ورود به حساب',
+                                  style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold)),
                               SizedBox(width: 8),
                               Icon(Icons.arrow_back, size: 20),
                             ],
@@ -144,7 +165,9 @@ class _LoginAuthScreenState extends State<LoginAuthScreen> {
                             padding: EdgeInsets.symmetric(horizontal: 12.0),
                             child: Text(
                               'یا ادامه دهید با',
-                              style: TextStyle(fontSize: 12, color: AppColors.darkOnSurfaceVariant),
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.darkOnSurfaceVariant),
                             ),
                           ),
                           Expanded(child: Divider(color: Colors.white24)),
@@ -164,9 +187,12 @@ class _LoginAuthScreenState extends State<LoginAuthScreen> {
                           child: const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.g_mobiledata_rounded, size: 28, color: Colors.white),
+                              Icon(Icons.g_mobiledata_rounded,
+                                  size: 28, color: Colors.white),
                               SizedBox(width: 8),
-                              Text('ورود با گوگل', style: TextStyle(color: Colors.white, fontSize: 15)),
+                              Text('ورود با گوگل',
+                                  style: TextStyle(
+                                      color: Colors.white, fontSize: 15)),
                             ],
                           ),
                         ),
@@ -182,13 +208,17 @@ class _LoginAuthScreenState extends State<LoginAuthScreen> {
                   children: [
                     const Text(
                       'کاربر جدید هستید؟ ',
-                      style: TextStyle(color: AppColors.darkOnSurfaceVariant, fontSize: 14),
+                      style: TextStyle(
+                          color: AppColors.darkOnSurfaceVariant, fontSize: 14),
                     ),
                     GestureDetector(
                       onTap: () {},
                       child: const Text(
                         'ثبت‌نام کنید',
-                        style: TextStyle(color: AppColors.primaryContainer, fontWeight: FontWeight.bold, fontSize: 14),
+                        style: TextStyle(
+                            color: AppColors.primaryContainer,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14),
                       ),
                     ),
                   ],

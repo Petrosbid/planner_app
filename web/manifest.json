@@ -1,11 +1,11 @@
 {
-    "name": "plannet_app",
-    "short_name": "plannet_app",
+    "name": "Zed_planner",
+    "short_name": "Zedplan",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "a modern offline-first personal planner designed to help people not only organize their tasks and schedules, but gradually become more consistent, realistic, self-aware, and disciplined.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

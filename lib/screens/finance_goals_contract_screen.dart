@@ -28,12 +28,12 @@ class _FinanceGoalsContractScreenState extends State<FinanceGoalsContractScreen>
             ),
 
             // Card 1: Savings Goal Card
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.0),
               child: GlassCard(
                 child: Column(
                   children: [
-                    const Row(
+                    Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Row(
@@ -46,21 +46,21 @@ class _FinanceGoalsContractScreenState extends State<FinanceGoalsContractScreen>
                         Icon(Icons.edit_outlined, size: 20, color: AppColors.primaryContainer),
                       ],
                     ),
-                    const SizedBox(height: 4),
-                    const Align(
+                    SizedBox(height: 4),
+                    Align(
                       alignment: Alignment.centerRight,
                       child: Text('سفر تابستانی به ژاپن', style: TextStyle(fontSize: 14, color: AppColors.lightOnSurfaceVariant)),
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
 
                     DonutChartWidget(
-                      percentages: const [65, 35],
-                      colors: const [AppColors.primaryContainer, Color(0xFFE2E8F0)],
+                      percentages: [65, 35],
+                      colors: [AppColors.primaryContainer, Color(0xFFE2E8F0)],
                       centerText: '۶۵%\nتکمیل شده',
                     ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20),
 
-                    const Row(
+                    Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Column(

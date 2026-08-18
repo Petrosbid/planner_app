@@ -31,11 +31,11 @@ class FocusInterruptionDialog extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final reasons = [
-      {'title': 'تماس یا پیام اضطراری', 'icon': Icons.phone_callback_rounded, 'color': Color(0xFFEF4444)},
-      {'title': 'همکار یا اعضای خانواده', 'icon': Icons.people_outline_rounded, 'color': Color(0xFFF59E0B)},
-      {'title': 'نوتیفیکیشن و شبکه‌های اجتماعی', 'icon': Icons.notifications_active_outlined, 'color': Color(0xFF8B5CF6)},
-      {'title': 'خستگی / نیاز به آب یا استراحت', 'icon': Icons.battery_charging_full_rounded, 'color': Color(0xFF06B6D4)},
-      {'title': 'حواس‌پرتی متفرقه یا پرش ذهنی', 'icon': Icons.psychology_outlined, 'color': Color(0xFF6B7280)},
+      {'title': 'تماس یا پیام اضطراری', 'icon': Icons.phone_callback_rounded, 'color': const Color(0xFFEF4444)},
+      {'title': 'همکار یا اعضای خانواده', 'icon': Icons.people_outline_rounded, 'color': const Color(0xFFF59E0B)},
+      {'title': 'نوتیفیکیشن و شبکه‌های اجتماعی', 'icon': Icons.notifications_active_outlined, 'color': const Color(0xFF8B5CF6)},
+      {'title': 'خستگی / نیاز به آب یا استراحت', 'icon': Icons.battery_charging_full_rounded, 'color': const Color(0xFF06B6D4)},
+      {'title': 'حواس‌پرتی متفرقه یا پرش ذهنی', 'icon': Icons.psychology_outlined, 'color': const Color(0xFF6B7280)},
     ];
 
     return Container(
@@ -78,7 +78,7 @@ class FocusInterruptionDialog extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       'ثبت علت حواس‌پرتی',
                       style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),

@@ -38,7 +38,7 @@ class _TaskManagementScreenState extends State<TaskManagementScreen> {
         child: ListView(
           padding: const EdgeInsets.only(bottom: 40),
           children: [
-            ZenHeader(
+            const ZenHeader(
               title: 'مدیریت وظایف',
               subtitle: 'روز خود را با تمرکز و وضوح برنامه‌ریزی کنید.',
             ),

@@ -98,7 +98,7 @@ class _FocusTimerRingState extends State<FocusTimerRing>
     final timeFormatted = _formatPersianDigits(timeRaw);
 
     final double effectiveSize = widget.isZenMode ? widget.ringSize * 1.15 : widget.ringSize;
-    final double strokeWidth = 13.0;
+    const double strokeWidth = 13.0;
 
     return Center(
       child: AnimatedBuilder(

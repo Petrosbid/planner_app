@@ -30,15 +30,15 @@ class _FinanceOverviewScreenState extends State<FinanceOverviewScreen> {
             ),
 
             // Card 1: Radar Chart Card
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.0),
               child: GlassCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('رادار سلامت مالی', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 16),
-                    const RadarChartWidget(),
+                    Text('رادار سلامت مالی', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    SizedBox(height: 16),
+                    RadarChartWidget(),
                   ],
                 ),
               ),

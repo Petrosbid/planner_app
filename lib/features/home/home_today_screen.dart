@@ -104,7 +104,7 @@ class _HomeTodayScreenState extends State<HomeTodayScreen> with SimulatedFetchMi
                               backgroundColor: AppColors.primaryContainer,
                               child: Text(
                                 initials,
-                                style: TextStyle(
+                                style: const TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -580,31 +580,31 @@ class _HomeTodayScreenState extends State<HomeTodayScreen> with SimulatedFetchMi
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       children: [
-        Row(
+        const Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
+              children: [
                 SkeletonLine(width: 180, height: 22),
                 SizedBox(height: 8),
                 SkeletonLine(width: 110, height: 12),
               ],
             ),
-            const SkeletonCircle(size: 40),
+            SkeletonCircle(size: 40),
           ],
         ),
         const SizedBox(height: 24),
-        SkeletonCard(
+        const SkeletonCard(
           radius: 24,
           child: Row(
             children: [
-              const SkeletonCircle(size: 88),
-              const SizedBox(width: 16),
+              SkeletonCircle(size: 88),
+              SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
+                  children: [
                     SkeletonLine(width: 130, height: 16),
                     SizedBox(height: 8),
                     SkeletonLine(height: 10),
@@ -618,18 +618,18 @@ class _HomeTodayScreenState extends State<HomeTodayScreen> with SimulatedFetchMi
         ),
         const SizedBox(height: 24),
         for (var i = 0; i < 2; i++)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12),
+          const Padding(
+            padding: EdgeInsets.only(bottom: 12),
             child: SkeletonCard(
               radius: 16,
               child: Row(
                 children: [
-                  const SkeletonLine(width: 20, height: 20, borderRadius: 10),
-                  const SizedBox(width: 16),
+                  SkeletonLine(width: 20, height: 20, borderRadius: 10),
+                  SizedBox(width: 16),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
+                      children: [
                         SkeletonLine(height: 14),
                         SizedBox(height: 8),
                         SkeletonLine(width: 90, height: 10),

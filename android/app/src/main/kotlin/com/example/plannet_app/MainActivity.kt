@@ -1,4 +1,4 @@
-package com.example.plannet_app
+package com.zedplan.app
 
 import io.flutter.embedding.android.FlutterActivity
 

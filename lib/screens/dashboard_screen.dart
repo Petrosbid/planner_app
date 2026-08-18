@@ -51,9 +51,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                     ),
                     const SizedBox(height: 20),
-                    DonutChartWidget(
-                      percentages: const [85, 15],
-                      colors: const [AppColors.primaryContainer, Color(0xFFE2E8F0)],
+                    const DonutChartWidget(
+                      percentages: [85, 15],
+                      colors: [AppColors.primaryContainer, Color(0xFFE2E8F0)],
                       centerText: '۸۵\n/ ۱۰۰',
                     ),
                     const SizedBox(height: 20),
@@ -199,13 +199,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
             const SizedBox(height: 16),
 
             // Card 4: Energy Forecast Chart
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.0),
               child: GlassCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Row(
+                    Row(
                       children: [
                         Icon(Icons.battery_charging_full_rounded, color: AppColors.warning, size: 22),
                         SizedBox(width: 8),
@@ -218,13 +218,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 4),
-                    const Text(
+                    SizedBox(height: 4),
+                    Text(
                       'اوج انتظار می‌رود در ساعت ۱۱:۰۰ صبح',
                       style: TextStyle(fontSize: 13, color: AppColors.lightOnSurfaceVariant),
                     ),
-                    const SizedBox(height: 16),
-                    const LineChartWidget(
+                    SizedBox(height: 16),
+                    LineChartWidget(
                       dataPoints: [10, 18, 28, 22, 14, 8],
                       xLabels: ['۸ صبح', '۱۰ صبح', '۱۲ ظهر', '۲ بعدظهر', '۴ عصر', '۶ عصر'],
                       primaryColor: AppColors.primaryContainer,

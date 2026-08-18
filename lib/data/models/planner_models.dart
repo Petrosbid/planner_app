@@ -51,7 +51,8 @@ class TaskItem {
         isCommitment: map['isCommitment'] as bool? ?? false,
         isCompleted: map['isCompleted'] as bool? ?? false,
         postponementCount: map['postponementCount'] as int? ?? 0,
-        createdAt: DateTime.tryParse(map['createdAt'] as String? ?? '') ?? DateTime.now(),
+        createdAt: DateTime.tryParse(map['createdAt'] as String? ?? '') ??
+            DateTime.now(),
       );
 }
 
@@ -65,6 +66,8 @@ class TimeBlockItem {
   String category; // 'deep' | 'meeting' | 'review' | custom
   bool isDone; // user-submitted outcome
   bool hasOutcome; // whether any outcome was submitted yet
+  String repeatType; // none|daily|everyOtherDay|weekly|biweekly|monthly
+  String? repeatParentId; // series identifier for repeated blocks
 
   TimeBlockItem({
     required this.id,
@@ -76,6 +79,8 @@ class TimeBlockItem {
     this.category = 'deep',
     this.isDone = false,
     this.hasOutcome = false,
+    this.repeatType = 'none',
+    this.repeatParentId,
   });
 
   Map<String, dynamic> toMap() => {
@@ -88,6 +93,8 @@ class TimeBlockItem {
         'category': category,
         'isDone': isDone,
         'hasOutcome': hasOutcome,
+        'repeatType': repeatType,
+        'repeatParentId': repeatParentId,
       };
 
   factory TimeBlockItem.fromMap(Map<String, dynamic> map) => TimeBlockItem(
@@ -99,7 +106,10 @@ class TimeBlockItem {
         colorValue: map['colorValue'] as int? ?? 0xFF3C51C2,
         category: map['category'] as String? ?? 'deep',
         isDone: map['isDone'] as bool? ?? false,
-        hasOutcome: map['hasOutcome'] as bool? ?? map['isDone'] as bool? ?? false,
+        hasOutcome:
+            map['hasOutcome'] as bool? ?? map['isDone'] as bool? ?? false,
+        repeatType: map['repeatType'] as String? ?? 'none',
+        repeatParentId: map['repeatParentId'] as String?,
       );
 }
 
@@ -125,7 +135,8 @@ class DistractionRecord {
         'relatedTitle': relatedTitle,
       };
 
-  factory DistractionRecord.fromMap(Map<String, dynamic> map) => DistractionRecord(
+  factory DistractionRecord.fromMap(Map<String, dynamic> map) =>
+      DistractionRecord(
         id: map['id'] as String,
         at: DateTime.tryParse(map['at'] as String? ?? '') ?? DateTime.now(),
         reason: map['reason'] as String? ?? 'other',
@@ -167,7 +178,11 @@ class NoteItem {
   String body;
   final DateTime updatedAt;
 
-  NoteItem({required this.id, required this.title, this.body = '', DateTime? updatedAt})
+  NoteItem(
+      {required this.id,
+      required this.title,
+      this.body = '',
+      DateTime? updatedAt})
       : updatedAt = updatedAt ?? DateTime.now();
 
   Map<String, dynamic> toMap() => {
@@ -181,7 +196,8 @@ class NoteItem {
         id: map['id'] as String,
         title: map['title'] as String,
         body: map['body'] as String? ?? '',
-        updatedAt: DateTime.tryParse(map['updatedAt'] as String? ?? '') ?? DateTime.now(),
+        updatedAt: DateTime.tryParse(map['updatedAt'] as String? ?? '') ??
+            DateTime.now(),
       );
 }
 
@@ -226,7 +242,12 @@ class ProjectItem {
     this.progress = 0,
   });
 
-  Map<String, dynamic> toMap() => {'id': id, 'title': title, 'description': description, 'progress': progress};
+  Map<String, dynamic> toMap() => {
+        'id': id,
+        'title': title,
+        'description': description,
+        'progress': progress
+      };
 
   factory ProjectItem.fromMap(Map<String, dynamic> map) => ProjectItem(
         id: map['id'] as String,
@@ -261,7 +282,8 @@ class FocusRecord {
 
   factory FocusRecord.fromMap(Map<String, dynamic> map) => FocusRecord(
         id: map['id'] as String,
-        startedAt: DateTime.tryParse(map['startedAt'] as String? ?? '') ?? DateTime.now(),
+        startedAt: DateTime.tryParse(map['startedAt'] as String? ?? '') ??
+            DateTime.now(),
         minutes: map['minutes'] as int? ?? 0,
         interruptions: map['interruptions'] as int? ?? 0,
         taskTitle: map['taskTitle'] as String?,
@@ -291,7 +313,8 @@ class DailyReviewRecord {
         'reflection': reflection,
       };
 
-  factory DailyReviewRecord.fromMap(Map<String, dynamic> map) => DailyReviewRecord(
+  factory DailyReviewRecord.fromMap(Map<String, dynamic> map) =>
+      DailyReviewRecord(
         date: DateTime.tryParse(map['date'] as String? ?? '') ?? DateTime.now(),
         energyRating: map['energyRating'] as int? ?? 3,
         focusRating: map['focusRating'] as int? ?? 3,

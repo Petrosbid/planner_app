@@ -1,5 +1,11 @@
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../notifications/notification_service.dart'
+    show blockAlarmEnabledGlobal;
 
 /// App-level settings with persistence: theme, locale, calendar, profile, onboarding.
 class AppSettings extends ChangeNotifier {
@@ -10,6 +16,10 @@ class AppSettings extends ChangeNotifier {
   static const _keyCalendar = 'settings.calendarType';
   static const _keySeedColor = 'settings.seedColor';
   static const _keyNotifications = 'settings.notificationsEnabled';
+  static const _keyBlockAlarm = 'settings.blockAlarmEnabled';
+  static const _keyAppLock = 'settings.appLockEnabled';
+  static const _keyBiometricLock = 'settings.biometricLockEnabled';
+  static const _keyLockPin = 'settings.lockPin';
 
   final SharedPreferences _prefs;
 
@@ -21,6 +31,48 @@ class AppSettings extends ChangeNotifier {
   Future<void> setNotificationsEnabled(bool value) async {
     await _prefs.setBool(_keyNotifications, value);
     notifyListeners();
+  }
+
+  /// Whether end-of-block notifications play a loud alarm sound (default on).
+  bool get blockAlarmEnabled => _prefs.getBool(_keyBlockAlarm) ?? true;
+
+  Future<void> setBlockAlarmEnabled(bool value) async {
+    await _prefs.setBool(_keyBlockAlarm, value);
+    blockAlarmEnabledGlobal = value; // sync with notification_service
+    notifyListeners();
+  }
+
+  /// App lock master switch (default off).
+  bool get appLockEnabled => _prefs.getBool(_keyAppLock) ?? false;
+
+  Future<void> setAppLockEnabled(bool value) async {
+    await _prefs.setBool(_keyAppLock, value);
+    if (value && !_prefs.containsKey(_keyLockPin)) {
+      await _prefs.setString(_keyLockPin, _hashPin('0000'));
+    }
+    notifyListeners();
+  }
+
+  /// Whether biometric (fingerprint/face) is used for unlocking (default true).
+  bool get biometricLockEnabled => _prefs.getBool(_keyBiometricLock) ?? true;
+
+  Future<void> setBiometricLockEnabled(bool value) async {
+    await _prefs.setBool(_keyBiometricLock, value);
+    notifyListeners();
+  }
+
+  String get lockPinHash => _prefs.getString(_keyLockPin) ?? _hashPin('0000');
+
+  Future<void> setLockPin(String pin) async {
+    await _prefs.setString(_keyLockPin, _hashPin(pin));
+    notifyListeners();
+  }
+
+  bool verifyLockPin(String pin) => lockPinHash == _hashPin(pin);
+
+  static String _hashPin(String pin) {
+    final bytes = utf8.encode(pin);
+    return sha256.convert(bytes).toString();
   }
 
   /// Brand color seed (ARGB). Defaults to the ZedPlan blue.
@@ -75,7 +127,8 @@ class AppSettings extends ChangeNotifier {
 
   bool get onboarded => _prefs.getBool(_keyOnboarded) ?? false;
 
-  Future<void> completeOnboarding({required String name, required ThemeMode theme}) async {
+  Future<void> completeOnboarding(
+      {required String name, required ThemeMode theme}) async {
     await _prefs.setString(_keyName, name.trim());
     await _prefs.setString(_keyTheme, theme.name);
     await _prefs.setBool(_keyOnboarded, true);

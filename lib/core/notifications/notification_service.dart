@@ -7,6 +7,11 @@ import 'dart:ui' show Color;
 import '../controllers/planner_store.dart';
 import 'notification_planner.dart';
 
+/// Global flag read by [_schedule] to decide whether end-of-block
+/// notifications should play a loud alarm sound. Synchronised from
+/// [AppSettings.blockAlarmEnabled] whenever notifications are enabled.
+bool blockAlarmEnabledGlobal = true;
+
 /// Schedules the app's local notifications:
 ///  - time-block start / "did you do it?" end prompts, and
 ///  - the end-of-day wrap-up reminder.
@@ -19,7 +24,8 @@ class NotificationService {
 
   static final NotificationService instance = NotificationService._();
 
-  final FlutterLocalNotificationsPlugin _plugin = FlutterLocalNotificationsPlugin();
+  final FlutterLocalNotificationsPlugin _plugin =
+      FlutterLocalNotificationsPlugin();
 
   bool _initialized = false;
   bool _enabled = true;
@@ -28,29 +34,64 @@ class NotificationService {
   bool get isReady => _initialized && _enabled;
 
   /// Initializes the plugin, channels, and timezone data. Safe to call once
-  /// at startup; failures (missing plugin on tests/desktop) disable the service.
+  /// at startup; failures are logged explicitly so notification issues are visible.
   Future<void> init({required int seedColor}) async {
     _seedColor = seedColor;
-    if (defaultTargetPlatform != TargetPlatform.android && defaultTargetPlatform != TargetPlatform.iOS) {
+    if (defaultTargetPlatform != TargetPlatform.android &&
+        defaultTargetPlatform != TargetPlatform.iOS) {
       return;
     }
+
     try {
       tzdata.initializeTimeZones();
+    } catch (e) {
+      debugPrint('[NotificationService] timezone init failed: $e');
+      _initialized = false;
+      return;
+    }
 
-      const android = AndroidInitializationSettings('@mipmap/ic_launcher');
-      const ios = DarwinInitializationSettings();
-      await _plugin.initialize(const InitializationSettings(android: android, iOS: ios));
+    const android = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const ios = DarwinInitializationSettings();
 
-      // Android 13+ runtime permission; iOS uses the standard prompt.
-      final androidImpl = _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
-      await androidImpl?.requestNotificationsPermission();
+    try {
       await _plugin
-          .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>()
-          ?.requestPermissions(alert: true, badge: true, sound: true);
+          .initialize(const InitializationSettings(android: android, iOS: ios));
+    } catch (e) {
+      debugPrint('[NotificationService] plugin init failed: $e');
+      _initialized = false;
+      return;
+    }
 
+    final androidImpl = _plugin.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>();
+    try {
+      await androidImpl?.requestNotificationsPermission();
+    } catch (e) {
+      debugPrint(
+          '[NotificationService] requestNotificationsPermission failed: $e');
+    }
+
+    try {
+      await androidImpl?.requestExactAlarmsPermission();
+    } catch (e) {
+      debugPrint(
+          '[NotificationService] requestExactAlarmsPermission failed: $e');
+    }
+
+    try {
+      await _plugin
+          .resolvePlatformSpecificImplementation<
+              IOSFlutterLocalNotificationsPlugin>()
+          ?.requestPermissions(alert: true, badge: true, sound: true);
+    } catch (e) {
+      debugPrint('[NotificationService] iOS permission request failed: $e');
+    }
+
+    try {
       await _ensureChannels();
       _initialized = true;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[NotificationService] channel setup failed: $e');
       _initialized = false;
     }
   }
@@ -58,14 +99,17 @@ class NotificationService {
   void setSeedColor(int argb) => _seedColor = argb;
 
   Future<void> _ensureChannels() async {
-    final androidImpl = _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
-    await androidImpl?.createNotificationChannel(const AndroidNotificationChannel(
+    final androidImpl = _plugin.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>();
+    await androidImpl
+        ?.createNotificationChannel(const AndroidNotificationChannel(
       'blocks',
       'زمان‌بندی و بلوک‌ها',
       description: 'شروع و پایان بلوک‌های زمانی و ثبت نتیجه',
       importance: Importance.high,
     ));
-    await androidImpl?.createNotificationChannel(const AndroidNotificationChannel(
+    await androidImpl
+        ?.createNotificationChannel(const AndroidNotificationChannel(
       'daily',
       'یادآور جمع‌بندی روز',
       description: 'یادآوری پایان روز برای ثبت عادت‌ها و ارزیابی',
@@ -106,12 +150,27 @@ class NotificationService {
   Future<void> _schedule(PlannedNotification n) async {
     final when = tz.TZDateTime.from(n.time, tz.local);
 
+    final isEndNotification =
+        n.title.contains('Did you do it?') || n.title.contains('انجامش دادید؟');
+
     final androidDetails = AndroidNotificationDetails(
       n.channel,
       n.channel == 'blocks' ? 'زمان‌بندی و بلوک‌ها' : 'یادآور جمع‌بندی روز',
-      channelDescription: n.channel == 'blocks' ? 'شروع و پایان بلوک‌های زمانی' : 'ثبت عادت‌ها و ارزیابی روزانه',
-      importance: n.channel == 'blocks' ? Importance.high : Importance.defaultImportance,
-      priority: n.channel == 'blocks' ? Priority.high : Priority.defaultPriority,
+      channelDescription: n.channel == 'blocks'
+          ? 'شروع و پایان بلوک‌های زمانی'
+          : 'ثبت عادت‌ها و ارزیابی روزانه',
+      importance: isEndNotification
+          ? Importance.max
+          : (n.channel == 'blocks'
+              ? Importance.high
+              : Importance.defaultImportance),
+      priority: isEndNotification
+          ? Priority.max
+          : (n.channel == 'blocks' ? Priority.high : Priority.defaultPriority),
+      playSound: isEndNotification && blockAlarmEnabledGlobal,
+      sound: (isEndNotification && blockAlarmEnabledGlobal)
+          ? const RawResourceAndroidNotificationSound('alarm')
+          : null,
       color: Color(_seedColor),
       colorized: true,
       category: AndroidNotificationCategory.reminder,
@@ -127,7 +186,8 @@ class NotificationService {
       when,
       NotificationDetails(android: androidDetails, iOS: iosDetails),
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
       matchDateTimeComponents: n.dailyRepeat ? DateTimeComponents.time : null,
     );
   }

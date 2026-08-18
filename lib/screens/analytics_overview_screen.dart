@@ -94,21 +94,21 @@ class _AnalyticsOverviewScreenState extends State<AnalyticsOverviewScreen> {
             const SizedBox(height: 16),
 
             // Card 3: Energy vs Output Scatter Plot
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.0),
               child: GlassCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Row(
+                    Row(
                       children: [
                         Icon(Icons.bubble_chart_outlined, color: AppColors.primaryContainer, size: 22),
                         SizedBox(width: 8),
                         Text('انرژی در مقابل خروجی', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                       ],
                     ),
-                    const SizedBox(height: 16),
-                    const ScatterPlotWidget(),
+                    SizedBox(height: 16),
+                    ScatterPlotWidget(),
                   ],
                 ),
               ),
@@ -116,21 +116,21 @@ class _AnalyticsOverviewScreenState extends State<AnalyticsOverviewScreen> {
             const SizedBox(height: 16),
 
             // Card 4: Focus Consistency Heatmap
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.0),
               child: GlassCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Row(
+                    Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text('ثبات در تمرکز', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                         Text('دوشنبه', style: TextStyle(fontSize: 12, color: AppColors.lightOnSurfaceVariant)),
                       ],
                     ),
-                    const SizedBox(height: 16),
-                    const HeatmapWidget(),
+                    SizedBox(height: 16),
+                    HeatmapWidget(),
                   ],
                 ),
               ),

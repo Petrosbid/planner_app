@@ -7,6 +7,8 @@ import 'widgets/focus_timer_ring.dart';
 import 'widgets/focus_mode_selector.dart';
 import 'widgets/focus_task_card.dart';
 import 'widgets/ambient_sound_sheet.dart';
+import 'widgets/ambient_sound_type.dart';
+import 'widgets/audio_player_service.dart';
 import 'widgets/focus_completion_dialog.dart';
 import '../common/distraction_reason_sheet.dart';
 
@@ -53,8 +55,14 @@ class _FocusSessionScreenState extends State<FocusSessionScreen> {
     // Default to the newest pending task, if any.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || _activeTaskTitle.isNotEmpty) return;
-      final tasks = AppScope.of(context).store.tasks.where((t) => !t.isCompleted).toList();
-      if (tasks.isNotEmpty) setState(() => _activeTaskTitle = tasks.first.title);
+      final tasks = AppScope.of(context)
+          .store
+          .tasks
+          .where((t) => !t.isCompleted)
+          .toList();
+      if (tasks.isNotEmpty) {
+        setState(() => _activeTaskTitle = tasks.first.title);
+      }
     });
   }
 
@@ -70,6 +78,7 @@ class _FocusSessionScreenState extends State<FocusSessionScreen> {
   @override
   void dispose() {
     _timer?.cancel();
+    AudioPlayerService.instance.stop();
     super.dispose();
   }
 
@@ -106,7 +115,9 @@ class _FocusSessionScreenState extends State<FocusSessionScreen> {
     );
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(AppLocalizations.of(context).translate('focusRecorded'))),
+      SnackBar(
+          content:
+              Text(AppLocalizations.of(context).translate('focusRecorded'))),
     );
   }
 
@@ -128,7 +139,8 @@ class _FocusSessionScreenState extends State<FocusSessionScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('رد کردن این جلسه؟'),
-        content: const Text('آیا می‌خواهید از ادامه این جلسه صرف‌نظر کنید و تایمر را بازنشانی نمایید؟'),
+        content: const Text(
+            'آیا می‌خواهید از ادامه این جلسه صرف‌نظر کنید و تایمر را بازنشانی نمایید؟'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
@@ -140,7 +152,8 @@ class _FocusSessionScreenState extends State<FocusSessionScreen> {
               _resetTimer();
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-            child: const Text('تایید و بازنشانی', style: TextStyle(color: Colors.white)),
+            child: const Text('تایید و بازنشانی',
+                style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -162,7 +175,8 @@ class _FocusSessionScreenState extends State<FocusSessionScreen> {
   }
 
   void _selectMode(FocusPresetMode mode) {
-    final newMinutes = mode == FocusPresetMode.custom ? _customMinutes : mode.minutes;
+    final newMinutes =
+        mode == FocusPresetMode.custom ? _customMinutes : mode.minutes;
     setState(() {
       _currentMode = mode;
       _sessionTotalMinutes = newMinutes;
@@ -259,17 +273,20 @@ class _FocusSessionScreenState extends State<FocusSessionScreen> {
                 constraints: const BoxConstraints(maxWidth: 520),
                 child: SingleChildScrollView(
                   physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0, vertical: 8.0),
                   child: ConstrainedBox(
                     constraints: BoxConstraints(
-                      minHeight: (constraints.maxHeight - 16).clamp(0.0, double.infinity),
+                      minHeight: (constraints.maxHeight - 16)
+                          .clamp(0.0, double.infinity),
                     ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         // 1. Top Header Bar
-                        _buildHeaderBar(context, isDark: isDark, canPop: canPop),
+                        _buildHeaderBar(context,
+                            isDark: isDark, canPop: canPop),
 
                         const SizedBox(height: 10),
 
@@ -278,8 +295,10 @@ class _FocusSessionScreenState extends State<FocusSessionScreen> {
                           FocusTaskCard(
                             taskTitle: _activeTaskTitle,
                             isTaskCompleted: _isTaskCompleted,
-                            onTaskChanged: (title) => setState(() => _activeTaskTitle = title),
-                            onTaskCompletedToggle: (val) => setState(() => _isTaskCompleted = val),
+                            onTaskChanged: (title) =>
+                                setState(() => _activeTaskTitle = title),
+                            onTaskCompletedToggle: (val) =>
+                                setState(() => _isTaskCompleted = val),
                             isZenMode: _isZenMode,
                           ),
                           const SizedBox(height: 10),
@@ -330,7 +349,7 @@ class _FocusSessionScreenState extends State<FocusSessionScreen> {
                         // 7. Mini Daily Focus Stats Footer (Hidden in Zen Mode)
                         if (!_isZenMode)
                           _buildDailyFocusStatsBar(isDark: isDark),
-                        
+
                         const SizedBox(height: 4),
                       ],
                     ),
@@ -344,7 +363,8 @@ class _FocusSessionScreenState extends State<FocusSessionScreen> {
     );
   }
 
-  Widget _buildHeaderBar(BuildContext context, {required bool isDark, required bool canPop}) {
+  Widget _buildHeaderBar(BuildContext context,
+      {required bool isDark, required bool canPop}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -368,7 +388,8 @@ class _FocusSessionScreenState extends State<FocusSessionScreen> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.self_improvement_rounded, size: 15, color: _modeColor),
+                Icon(Icons.self_improvement_rounded,
+                    size: 15, color: _modeColor),
                 const SizedBox(width: 4),
                 Text(
                   'کار عمیق',
@@ -400,11 +421,18 @@ class _FocusSessionScreenState extends State<FocusSessionScreen> {
         IconButton(
           onPressed: () => setState(() => _isZenMode = !_isZenMode),
           icon: Icon(
-            _isZenMode ? Icons.fullscreen_exit_rounded : Icons.fullscreen_rounded,
+            _isZenMode
+                ? Icons.fullscreen_exit_rounded
+                : Icons.fullscreen_rounded,
             size: 24,
-            color: _isZenMode ? AppColors.primary : (isDark ? AppColors.darkOnSurfaceVariant : AppColors.onSurfaceVariant),
+            color: _isZenMode
+                ? AppColors.primary
+                : (isDark
+                    ? AppColors.darkOnSurfaceVariant
+                    : AppColors.onSurfaceVariant),
           ),
-          tooltip: _isZenMode ? 'خروج از حالت تمام‌صفحه' : 'حالت غوطه‌وری (Zen)',
+          tooltip:
+              _isZenMode ? 'خروج از حالت تمام‌صفحه' : 'حالت غوطه‌وری (Zen)',
         ),
       ],
     );
@@ -424,12 +452,16 @@ class _FocusSessionScreenState extends State<FocusSessionScreen> {
               decoration: BoxDecoration(
                 color: _interruptions > 0
                     ? AppColors.error.withValues(alpha: isDark ? 0.2 : 0.1)
-                    : (isDark ? AppColors.darkSurfaceContainerLow : AppColors.surfaceContainerLowest),
+                    : (isDark
+                        ? AppColors.darkSurfaceContainerLow
+                        : AppColors.surfaceContainerLowest),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
                   color: _interruptions > 0
                       ? AppColors.error.withValues(alpha: 0.5)
-                      : (isDark ? AppColors.darkOutlineVariant.withValues(alpha: 0.3) : AppColors.outlineVariant.withValues(alpha: 0.4)),
+                      : (isDark
+                          ? AppColors.darkOutlineVariant.withValues(alpha: 0.3)
+                          : AppColors.outlineVariant.withValues(alpha: 0.4)),
                   width: 1,
                 ),
               ),
@@ -439,7 +471,11 @@ class _FocusSessionScreenState extends State<FocusSessionScreen> {
                   Icon(
                     Icons.notifications_paused_outlined,
                     size: 15,
-                    color: _interruptions > 0 ? AppColors.error : (isDark ? AppColors.darkOnSurfaceVariant : AppColors.onSurfaceVariant),
+                    color: _interruptions > 0
+                        ? AppColors.error
+                        : (isDark
+                            ? AppColors.darkOnSurfaceVariant
+                            : AppColors.onSurfaceVariant),
                   ),
                   const SizedBox(width: 5),
                   Flexible(
@@ -450,12 +486,17 @@ class _FocusSessionScreenState extends State<FocusSessionScreen> {
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
-                        color: _interruptions > 0 ? AppColors.error : (isDark ? AppColors.darkOnSurfaceVariant : AppColors.onSurfaceVariant),
+                        color: _interruptions > 0
+                            ? AppColors.error
+                            : (isDark
+                                ? AppColors.darkOnSurfaceVariant
+                                : AppColors.onSurfaceVariant),
                       ),
                     ),
                   ),
                   const SizedBox(width: 3),
-                  const Icon(Icons.add_rounded, size: 14, color: AppColors.error),
+                  const Icon(Icons.add_rounded,
+                      size: 14, color: AppColors.error),
                 ],
               ),
             ),
@@ -473,12 +514,16 @@ class _FocusSessionScreenState extends State<FocusSessionScreen> {
               decoration: BoxDecoration(
                 color: _ambientAudioEnabled
                     ? _selectedSound.color.withValues(alpha: isDark ? 0.2 : 0.1)
-                    : (isDark ? AppColors.darkSurfaceContainerLow : AppColors.surfaceContainerLowest),
+                    : (isDark
+                        ? AppColors.darkSurfaceContainerLow
+                        : AppColors.surfaceContainerLowest),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
                   color: _ambientAudioEnabled
                       ? _selectedSound.color.withValues(alpha: 0.5)
-                      : (isDark ? AppColors.darkOutlineVariant.withValues(alpha: 0.3) : AppColors.outlineVariant.withValues(alpha: 0.4)),
+                      : (isDark
+                          ? AppColors.darkOutlineVariant.withValues(alpha: 0.3)
+                          : AppColors.outlineVariant.withValues(alpha: 0.4)),
                   width: 1,
                 ),
               ),
@@ -486,20 +531,32 @@ class _FocusSessionScreenState extends State<FocusSessionScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
-                    _ambientAudioEnabled ? _selectedSound.icon : Icons.volume_off_rounded,
+                    _ambientAudioEnabled
+                        ? _selectedSound.icon
+                        : Icons.volume_off_rounded,
                     size: 15,
-                    color: _ambientAudioEnabled ? _selectedSound.color : (isDark ? AppColors.darkOnSurfaceVariant : AppColors.onSurfaceVariant),
+                    color: _ambientAudioEnabled
+                        ? _selectedSound.color
+                        : (isDark
+                            ? AppColors.darkOnSurfaceVariant
+                            : AppColors.onSurfaceVariant),
                   ),
                   const SizedBox(width: 5),
                   Flexible(
                     child: Text(
-                      _ambientAudioEnabled ? _selectedSound.title : 'صداهای محیطی',
+                      _ambientAudioEnabled
+                          ? _selectedSound.title
+                          : 'صداهای محیطی',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
-                        color: _ambientAudioEnabled ? _selectedSound.color : (isDark ? AppColors.darkOnSurfaceVariant : AppColors.onSurfaceVariant),
+                        color: _ambientAudioEnabled
+                            ? _selectedSound.color
+                            : (isDark
+                                ? AppColors.darkOnSurfaceVariant
+                                : AppColors.onSurfaceVariant),
                       ),
                     ),
                   ),
@@ -528,7 +585,9 @@ class _FocusSessionScreenState extends State<FocusSessionScreen> {
           ),
           icon: Icon(
             Icons.refresh_rounded,
-            color: isDark ? AppColors.darkOnSurfaceVariant : AppColors.onSurfaceVariant,
+            color: isDark
+                ? AppColors.darkOnSurfaceVariant
+                : AppColors.onSurfaceVariant,
             size: 20,
           ),
         ),
@@ -556,7 +615,8 @@ class _FocusSessionScreenState extends State<FocusSessionScreen> {
             child: Center(
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 200),
-                transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: child),
+                transitionBuilder: (child, anim) =>
+                    ScaleTransition(scale: anim, child: child),
                 child: Icon(
                   _isRunning ? Icons.pause_rounded : Icons.play_arrow_rounded,
                   key: ValueKey<bool>(_isRunning),
@@ -581,7 +641,9 @@ class _FocusSessionScreenState extends State<FocusSessionScreen> {
           ),
           icon: Icon(
             Icons.skip_next_rounded,
-            color: isDark ? AppColors.darkOnSurfaceVariant : AppColors.onSurfaceVariant,
+            color: isDark
+                ? AppColors.darkOnSurfaceVariant
+                : AppColors.onSurfaceVariant,
             size: 20,
           ),
         ),
@@ -597,7 +659,9 @@ class _FocusSessionScreenState extends State<FocusSessionScreen> {
       builder: (context, _) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: isDark ? AppColors.darkSurfaceContainerLow : AppColors.surfaceContainerLowest,
+          color: isDark
+              ? AppColors.darkSurfaceContainerLow
+              : AppColors.surfaceContainerLowest,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: isDark
@@ -619,18 +683,23 @@ class _FocusSessionScreenState extends State<FocusSessionScreen> {
             Container(
               width: 1,
               height: 22,
-              color: isDark ? AppColors.darkOutlineVariant : AppColors.outlineVariant,
+              color: isDark
+                  ? AppColors.darkOutlineVariant
+                  : AppColors.outlineVariant,
             ),
             _miniStat(
               icon: Icons.check_circle_outline_rounded,
               title: l10n.translate('sessionsStat'),
-              value: _formatPersianDigits(store.todayFocusRecords.length.toString()),
+              value: _formatPersianDigits(
+                  store.todayFocusRecords.length.toString()),
               color: AppColors.success,
             ),
             Container(
               width: 1,
               height: 22,
-              color: isDark ? AppColors.darkOutlineVariant : AppColors.outlineVariant,
+              color: isDark
+                  ? AppColors.darkOutlineVariant
+                  : AppColors.outlineVariant,
             ),
             _miniStat(
               icon: Icons.notifications_paused_outlined,
@@ -669,7 +738,8 @@ class _FocusSessionScreenState extends State<FocusSessionScreen> {
             ),
             Text(
               title,
-              style: TextStyle(fontSize: 8.5, color: AppColors.onSurfaceVariant),
+              style:
+                  TextStyle(fontSize: 8.5, color: AppColors.onSurfaceVariant),
             ),
           ],
         ),

@@ -20,7 +20,8 @@ class BlockFormSheet extends StatefulWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => BlockFormSheet(initialDate: initialDate ?? DateTime.now()),
+      builder: (_) =>
+          BlockFormSheet(initialDate: initialDate ?? DateTime.now()),
     );
   }
 
@@ -53,6 +54,7 @@ class _BlockFormSheetState extends State<BlockFormSheet> {
   double _duration = 1;
   late String _category = 'deep';
   String? _conflictTitle;
+  String _repeatType = 'none';
 
   @override
   void dispose() {
@@ -60,7 +62,7 @@ class _BlockFormSheetState extends State<BlockFormSheet> {
     super.dispose();
   }
 
-  void _save(PlannerStore store, AppLocalizations l10n) {
+  Future<void> _save(PlannerStore store, AppLocalizations l10n) async {
     final title = _titleController.text.trim();
     if (title.isEmpty) return;
 
@@ -70,21 +72,42 @@ class _BlockFormSheetState extends State<BlockFormSheet> {
       return;
     }
 
-    store.addBlock(
+    final added = await store.addBlockWithRepeat(
       title: title,
       date: _date,
       startHour: _startHour,
       durationHours: _duration,
       colorValue: PlannerStore.categoryColor(_category),
       category: _category,
+      repeatType: _repeatType,
     );
+    if (!mounted) return;
     Navigator.of(context).pop();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(l10n.translate('blockAdded'))),
+    final msg = added.length <= 1
+        ? l10n.translate('blockAdded')
+        : l10n
+            .translate('blockAddedMultiple')
+            .replaceAll('%s', added.length.toString());
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  }
+
+  Widget _repeatChip(String value, String label) {
+    final selected = _repeatType == value;
+    return ChoiceChip(
+      label: Text(label),
+      selected: selected,
+      showCheckmark: false,
+      selectedColor: AppColors.primary,
+      labelStyle: TextStyle(
+        fontSize: 12,
+        color: selected ? Colors.white : AppColors.onSurfaceVariant,
+      ),
+      onSelected: (_) => setState(() => _repeatType = value),
     );
   }
 
-  Future<void> _showNewCategoryDialog(PlannerStore store, AppLocalizations l10n) async {
+  Future<void> _showNewCategoryDialog(
+      PlannerStore store, AppLocalizations l10n) async {
     final controller = TextEditingController();
     final messenger = ScaffoldMessenger.of(context);
     final added = await showDialog<bool>(
@@ -94,10 +117,13 @@ class _BlockFormSheetState extends State<BlockFormSheet> {
         content: TextField(
           controller: controller,
           autofocus: true,
-          decoration: InputDecoration(hintText: l10n.translate('categoryNameHint')),
+          decoration:
+              InputDecoration(hintText: l10n.translate('categoryNameHint')),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: Text(l10n.translate('cancel'))),
+          TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: Text(l10n.translate('cancel'))),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
             child: Text(l10n.translate('add')),
@@ -110,9 +136,11 @@ class _BlockFormSheetState extends State<BlockFormSheet> {
     if (!mounted) return;
     if (ok) {
       setState(() => _category = controller.text.trim());
-      messenger.showSnackBar(SnackBar(content: Text(l10n.translate('newCategoryAdded'))));
+      messenger.showSnackBar(
+          SnackBar(content: Text(l10n.translate('newCategoryAdded'))));
     } else {
-      messenger.showSnackBar(SnackBar(content: Text(l10n.translate('categoryExists'))));
+      messenger.showSnackBar(
+          SnackBar(content: Text(l10n.translate('categoryExists'))));
     }
   }
 
@@ -125,7 +153,8 @@ class _BlockFormSheetState extends State<BlockFormSheet> {
     final useJalali = settings.useJalali;
 
     return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding:
+          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
         constraints: BoxConstraints(
           maxHeight: MediaQuery.of(context).size.height * 0.85,
@@ -140,20 +169,23 @@ class _BlockFormSheetState extends State<BlockFormSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(l10n.translate('addBlockTitle'), style: AppTypography.headlineMd()),
+              Text(l10n.translate('addBlockTitle'),
+                  style: AppTypography.headlineMd()),
               const SizedBox(height: 16),
               TextField(
                 controller: _titleController,
                 autofocus: true,
                 decoration: InputDecoration(
                   hintText: l10n.translate('blockTitleHint'),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16)),
                 ),
               ),
               const SizedBox(height: 16),
 
               // Day picker (calendar-aware labels)
-              Text(l10n.translate('dateLabel'), style: AppTypography.labelCaps()),
+              Text(l10n.translate('dateLabel'),
+                  style: AppTypography.labelCaps()),
               const SizedBox(height: 8),
               SizedBox(
                 height: 64,
@@ -174,7 +206,9 @@ class _BlockFormSheetState extends State<BlockFormSheet> {
                         width: 56,
                         padding: const EdgeInsets.symmetric(horizontal: 8),
                         decoration: BoxDecoration(
-                          color: selected ? AppColors.primary : AppColors.surfaceContainerLow,
+                          color: selected
+                              ? AppColors.primary
+                              : AppColors.surfaceContainerLow,
                           borderRadius: BorderRadius.circular(14),
                         ),
                         child: Column(
@@ -183,19 +217,25 @@ class _BlockFormSheetState extends State<BlockFormSheet> {
                             Text(
                               i == 0
                                   ? l10n.translate('today')
-                                  : ZedDateUtils.weekday(day, fa: isFa, short: true),
+                                  : ZedDateUtils.weekday(day,
+                                      fa: isFa, short: true),
                               style: TextStyle(
                                 fontSize: 11,
-                                color: selected ? Colors.white : AppColors.onSurfaceVariant,
+                                color: selected
+                                    ? Colors.white
+                                    : AppColors.onSurfaceVariant,
                               ),
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              ZedDateUtils.dayNumber(day, fa: isFa, jalali: useJalali),
+                              ZedDateUtils.dayNumber(day,
+                                  fa: isFa, jalali: useJalali),
                               style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.bold,
-                                color: selected ? Colors.white : AppColors.onSurface,
+                                color: selected
+                                    ? Colors.white
+                                    : AppColors.onSurface,
                               ),
                             ),
                           ],
@@ -238,7 +278,8 @@ class _BlockFormSheetState extends State<BlockFormSheet> {
               ),
 
               // Categories: built-ins + user's own + add-new
-              Text(l10n.translate('category'), style: AppTypography.labelCaps()),
+              Text(l10n.translate('category'),
+                  style: AppTypography.labelCaps()),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
@@ -249,7 +290,9 @@ class _BlockFormSheetState extends State<BlockFormSheet> {
                       label: Text(BlockFormSheet.categoryLabel(c, l10n)),
                       labelStyle: TextStyle(
                         fontSize: 12,
-                        color: _category == c ? Colors.white : AppColors.onSurfaceVariant,
+                        color: _category == c
+                            ? Colors.white
+                            : AppColors.onSurfaceVariant,
                       ),
                       avatar: CircleAvatar(
                         backgroundColor: Color(PlannerStore.categoryColor(c)),
@@ -261,10 +304,29 @@ class _BlockFormSheetState extends State<BlockFormSheet> {
                       onSelected: (_) => setState(() => _category = c),
                     ),
                   ActionChip(
-                    avatar: Icon(Icons.add_rounded, size: 18, color: AppColors.primary),
+                    avatar: Icon(Icons.add_rounded,
+                        size: 18, color: AppColors.primary),
                     label: Text(l10n.translate('addCategory')),
                     onPressed: () => _showNewCategoryDialog(store, l10n),
                   ),
+                ],
+              ),
+
+              const SizedBox(height: 12),
+              Text(l10n.translate('repeatLabel'),
+                  style: AppTypography.labelCaps()),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  _repeatChip('none', l10n.translate('repeatNone')),
+                  _repeatChip('daily', l10n.translate('repeatDaily')),
+                  _repeatChip(
+                      'everyOtherDay', l10n.translate('repeatEveryOtherDay')),
+                  _repeatChip('weekly', l10n.translate('repeatWeekly')),
+                  _repeatChip('biweekly', l10n.translate('repeatBiweekly')),
+                  _repeatChip('monthly', l10n.translate('repeatMonthly')),
                 ],
               ),
 
@@ -276,16 +338,21 @@ class _BlockFormSheetState extends State<BlockFormSheet> {
                   decoration: BoxDecoration(
                     color: AppColors.errorContainer.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.error.withValues(alpha: 0.4)),
+                    border: Border.all(
+                        color: AppColors.error.withValues(alpha: 0.4)),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.error_outline_rounded, size: 18, color: AppColors.error),
+                      const Icon(Icons.error_outline_rounded,
+                          size: 18, color: AppColors.error),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          l10n.translate('timeConflictError').replaceAll('%s', _conflictTitle!),
-                          style: const TextStyle(fontSize: 12, color: AppColors.error),
+                          l10n
+                              .translate('timeConflictError')
+                              .replaceAll('%s', _conflictTitle!),
+                          style: const TextStyle(
+                              fontSize: 12, color: AppColors.error),
                         ),
                       ),
                     ],
@@ -298,7 +365,7 @@ class _BlockFormSheetState extends State<BlockFormSheet> {
                 width: double.infinity,
                 height: 50,
                 child: FilledButton(
-                  onPressed: () => _save(store, l10n),
+                  onPressed: () async => _save(store, l10n),
                   child: Text(l10n.translate('save')),
                 ),
               ),

@@ -32,7 +32,13 @@ class PlannerStore extends ChangeNotifier {
 
   /// Built-in distraction / not-done reason keys; users can add their own.
   static const builtInReasons = [
-    'phone', 'lowEnergy', 'environment', 'unexpected', 'clarity', 'motivation', 'other',
+    'phone',
+    'lowEnergy',
+    'environment',
+    'unexpected',
+    'clarity',
+    'motivation',
+    'other',
   ];
 
   final SharedPreferences _prefs;
@@ -63,9 +69,11 @@ class PlannerStore extends ChangeNotifier {
     _goals.addAll(_read<GoalItem>(_kGoals, GoalItem.fromMap));
     _projects.addAll(_read<ProjectItem>(_kProjects, ProjectItem.fromMap));
     _focusRecords.addAll(_read<FocusRecord>(_kFocus, FocusRecord.fromMap));
-    _reviews.addAll(_read<DailyReviewRecord>(_kReviews, DailyReviewRecord.fromMap));
+    _reviews
+        .addAll(_read<DailyReviewRecord>(_kReviews, DailyReviewRecord.fromMap));
     _customCategories.addAll(((_prefs.getStringList(_kCategories) ?? [])));
-    _distractions.addAll(_read<DistractionRecord>(_kDistractions, DistractionRecord.fromMap));
+    _distractions.addAll(
+        _read<DistractionRecord>(_kDistractions, DistractionRecord.fromMap));
     _customReasons.addAll((_prefs.getStringList(_kReasons) ?? []));
   }
 
@@ -74,13 +82,16 @@ class PlannerStore extends ChangeNotifier {
     if (raw == null || raw.isEmpty) return [];
     try {
       final list = jsonDecode(raw) as List;
-      return list.map((e) => fromMap(Map<String, dynamic>.from(e as Map))).toList();
+      return list
+          .map((e) => fromMap(Map<String, dynamic>.from(e as Map)))
+          .toList();
     } catch (_) {
       return []; // corrupted entry: start clean rather than crash
     }
   }
 
-  Future<void> _write<T>(String key, List<T> items, Map<String, dynamic> Function(T) toMap) async {
+  Future<void> _write<T>(
+      String key, List<T> items, Map<String, dynamic> Function(T) toMap) async {
     await _prefs.setString(key, jsonEncode(items.map(toMap).toList()));
   }
 
@@ -196,16 +207,23 @@ class PlannerStore extends ChangeNotifier {
   }
 
   List<TimeBlockItem> blocksForDay(DateTime date) =>
-      _blocks.where((b) => _sameDay(b.date, date)).toList()..sort((a, b) => a.startHour.compareTo(b.startHour));
+      _blocks.where((b) => _sameDay(b.date, date)).toList()
+        ..sort((a, b) => a.startHour.compareTo(b.startHour));
 
-  double plannedHoursForDay(DateTime date) => blocksForDay(date)
-      .fold(0.0, (sum, b) => sum + b.durationHours);
+  double plannedHoursForDay(DateTime date) =>
+      blocksForDay(date).fold(0.0, (sum, b) => sum + b.durationHours);
 
-  /// Returns the conflicting block's title when [startHour, startHour + durationHours)
+  /// Returns the conflicting block when [startHour, startHour + durationHours)
   /// overlaps an existing block on [date]; null when the range is free.
   /// Ranges that merely touch (end == next start) are allowed.
-  TimeBlockItem? conflictingBlock(DateTime date, double startHour, double durationHours) {
+  TimeBlockItem? conflictingBlock(
+    DateTime date,
+    double startHour,
+    double durationHours, {
+    String? excludeBlockId,
+  }) {
     for (final b in blocksForDay(date)) {
+      if (excludeBlockId != null && b.id == excludeBlockId) continue;
       final bs = b.startHour;
       final be = b.startHour + b.durationHours;
       final ns = startHour;
@@ -215,12 +233,87 @@ class PlannerStore extends ChangeNotifier {
     return null;
   }
 
+  Future<void> updateBlockStartTime(
+      TimeBlockItem block, double startHour) async {
+    block.startHour = startHour;
+    await _write(_kBlocks, _blocks, (b) => b.toMap());
+    notifyListeners();
+  }
+
+  Future<List<TimeBlockItem>> addBlockWithRepeat({
+    required String title,
+    required DateTime date,
+    required double startHour,
+    double durationHours = 1,
+    int colorValue = 0xFF3C51C2,
+    String category = 'deep',
+    String repeatType = 'none',
+  }) async {
+    final normalizedDate = DateTime(date.year, date.month, date.day);
+    final repeatParentId = repeatType == 'none' ? null : _uuid.v4();
+    final added = <TimeBlockItem>[];
+
+    List<DateTime> occurrences() {
+      switch (repeatType) {
+        case 'daily':
+          return List.generate(
+              30, (i) => normalizedDate.add(Duration(days: i)));
+        case 'everyOtherDay':
+          return List.generate(
+              30, (i) => normalizedDate.add(Duration(days: i * 2)));
+        case 'weekly':
+          return List.generate(
+              12, (i) => normalizedDate.add(Duration(days: i * 7)));
+        case 'biweekly':
+          return List.generate(
+              12, (i) => normalizedDate.add(Duration(days: i * 14)));
+        case 'monthly':
+          return List.generate(12, (i) {
+            final first =
+                DateTime(normalizedDate.year, normalizedDate.month + i, 1);
+            final lastDay = DateTime(first.year, first.month + 1, 0).day;
+            final day =
+                normalizedDate.day > lastDay ? lastDay : normalizedDate.day;
+            return DateTime(first.year, first.month, day);
+          });
+        case 'none':
+        default:
+          return [normalizedDate];
+      }
+    }
+
+    for (final d in occurrences()) {
+      if (conflictingBlock(d, startHour, durationHours) != null) continue;
+      final block = TimeBlockItem(
+        id: _uuid.v4(),
+        title: title,
+        date: d,
+        startHour: startHour,
+        durationHours: durationHours,
+        colorValue: colorValue,
+        category: category,
+        repeatType: repeatType,
+        repeatParentId: repeatParentId,
+      );
+      _blocks.add(block);
+      added.add(block);
+    }
+
+    if (added.isNotEmpty) {
+      await _write(_kBlocks, _blocks, (b) => b.toMap());
+      notifyListeners();
+    }
+
+    return added;
+  }
+
   // ---------- custom categories ----------
 
   List<String> get customCategories => List.unmodifiable(_customCategories);
 
   /// All selectable categories: built-ins first, then the user's own.
-  List<String> get allCategories => [...builtInCategories, ..._customCategories];
+  List<String> get allCategories =>
+      [...builtInCategories, ..._customCategories];
 
   /// Adds [name] if it is non-empty and not already known (case-insensitive).
   /// Returns true when the category was added.
@@ -248,7 +341,12 @@ class PlannerStore extends ChangeNotifier {
         return 0xFFF59E0B; // AppColors.warning
       default:
         const palette = [
-          0xFF8B5CF6, 0xFF14B8A6, 0xFFEC4899, 0xFF6366F1, 0xFFEA580C, 0xFF65A30D,
+          0xFF8B5CF6,
+          0xFF14B8A6,
+          0xFFEC4899,
+          0xFF6366F1,
+          0xFFEA580C,
+          0xFF65A30D,
         ];
         var hash = 0;
         for (final code in category.codeUnits) {
@@ -260,8 +358,10 @@ class PlannerStore extends ChangeNotifier {
 
   // ---------- habits ----------
 
-  Future<HabitItem> addHabit({required String title, int colorValue = 0xFF3C51C2}) async {
-    final habit = HabitItem(id: _uuid.v4(), title: title, colorValue: colorValue);
+  Future<HabitItem> addHabit(
+      {required String title, int colorValue = 0xFF3C51C2}) async {
+    final habit =
+        HabitItem(id: _uuid.v4(), title: title, colorValue: colorValue);
     _habits.add(habit);
     await _write(_kHabits, _habits, (h) => h.toMap());
     notifyListeners();
@@ -285,7 +385,8 @@ class PlannerStore extends ChangeNotifier {
     notifyListeners();
   }
 
-  bool habitDoneToday(HabitItem habit) => habit.markedDays.contains(_dayKey(DateTime.now()));
+  bool habitDoneToday(HabitItem habit) =>
+      habit.markedDays.contains(_dayKey(DateTime.now()));
 
   /// Consecutive marked days ending today (or yesterday if today is unmarked).
   int habitStreak(HabitItem habit) {
@@ -312,7 +413,8 @@ class PlannerStore extends ChangeNotifier {
     return note;
   }
 
-  Future<void> updateNote(NoteItem note, {required String title, required String body}) async {
+  Future<void> updateNote(NoteItem note,
+      {required String title, required String body}) async {
     note.title = title;
     note.body = body;
     await _write(_kNotes, _notes, (n) => n.toMap());
@@ -325,8 +427,10 @@ class PlannerStore extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<GoalItem> addGoal({required String title, String description = ''}) async {
-    final goal = GoalItem(id: _uuid.v4(), title: title, description: description);
+  Future<GoalItem> addGoal(
+      {required String title, String description = ''}) async {
+    final goal =
+        GoalItem(id: _uuid.v4(), title: title, description: description);
     _goals.add(goal);
     await _write(_kGoals, _goals, (g) => g.toMap());
     notifyListeners();
@@ -344,8 +448,10 @@ class PlannerStore extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<ProjectItem> addProject({required String title, String description = ''}) async {
-    final project = ProjectItem(id: _uuid.v4(), title: title, description: description);
+  Future<ProjectItem> addProject(
+      {required String title, String description = ''}) async {
+    final project =
+        ProjectItem(id: _uuid.v4(), title: title, description: description);
     _projects.add(project);
     await _write(_kProjects, _projects, (p) => p.toMap());
     notifyListeners();
@@ -382,7 +488,8 @@ class PlannerStore extends ChangeNotifier {
     return true;
   }
 
-  Future<void> addDistraction({required String reason, String? relatedTitle}) async {
+  Future<void> addDistraction(
+      {required String reason, String? relatedTitle}) async {
     _distractions.add(DistractionRecord(
       id: _uuid.v4(),
       at: DateTime.now(),
@@ -413,7 +520,8 @@ class PlannerStore extends ChangeNotifier {
     for (final d in _distractions.where((d) => d.at.isAfter(cutoff))) {
       counts[d.reason] = (counts[d.reason] ?? 0) + 1;
     }
-    final entries = counts.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+    final entries = counts.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
     return entries;
   }
 
@@ -441,7 +549,8 @@ class PlannerStore extends ChangeNotifier {
       .where((r) => _sameDay(r.startedAt, DateTime.now()))
       .toList();
 
-  int get todayFocusMinutes => todayFocusRecords.fold(0, (sum, r) => sum + r.minutes);
+  int get todayFocusMinutes =>
+      todayFocusRecords.fold(0, (sum, r) => sum + r.minutes);
 
   // ---------- reviews ----------
 
@@ -462,8 +571,9 @@ class PlannerStore extends ChangeNotifier {
   // ---------- computed analytics ----------
 
   /// Completed tasks / all tasks ever created (0 when empty).
-  double get executionRate =>
-      _tasks.isEmpty ? 0 : _tasks.where((t) => t.isCompleted).length / _tasks.length;
+  double get executionRate => _tasks.isEmpty
+      ? 0
+      : _tasks.where((t) => t.isCompleted).length / _tasks.length;
 
   double get commitmentReliability {
     final commitments = _tasks.where((t) => t.isCommitment).toList();
@@ -508,8 +618,17 @@ class PlannerStore extends ChangeNotifier {
     _distractions.clear();
     _customReasons.clear();
     for (final key in [
-      _kTasks, _kBlocks, _kHabits, _kNotes, _kGoals, _kProjects, _kFocus, _kReviews, _kCategories,
-      _kDistractions, _kReasons,
+      _kTasks,
+      _kBlocks,
+      _kHabits,
+      _kNotes,
+      _kGoals,
+      _kProjects,
+      _kFocus,
+      _kReviews,
+      _kCategories,
+      _kDistractions,
+      _kReasons,
     ]) {
       await _prefs.remove(key);
     }
@@ -518,7 +637,8 @@ class PlannerStore extends ChangeNotifier {
 
   // ---------- helpers ----------
 
-  static bool _sameDay(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
+  static bool _sameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
 
   static String _dayKey(DateTime d) =>
       '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';

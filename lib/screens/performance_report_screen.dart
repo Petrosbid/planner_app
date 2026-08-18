@@ -154,17 +154,17 @@ class _PerformanceReportScreenState extends State<PerformanceReportScreen> {
             const SizedBox(height: 16),
 
             // Card: Weekly Performance Comparison Bar Chart
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.0),
               child: GlassCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('مقایسه عملکرد هفتگی', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 4),
-                    const Text('ساعات تمرکز: این هفته در مقابل هفته گذشته', style: TextStyle(fontSize: 12, color: AppColors.lightOnSurfaceVariant)),
-                    const SizedBox(height: 16),
-                    const WeeklyBarChartWidget(),
+                    Text('مقایسه عملکرد هفتگی', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    SizedBox(height: 4),
+                    Text('ساعات تمرکز: این هفته در مقابل هفته گذشته', style: TextStyle(fontSize: 12, color: AppColors.lightOnSurfaceVariant)),
+                    SizedBox(height: 16),
+                    WeeklyBarChartWidget(),
                   ],
                 ),
               ),
@@ -172,21 +172,21 @@ class _PerformanceReportScreenState extends State<PerformanceReportScreen> {
             const SizedBox(height: 16),
 
             // Card: AI Smart Analysis
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.0),
               child: GlassCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Row(
+                    Row(
                       children: [
                         Icon(Icons.auto_awesome, color: AppColors.primaryContainer, size: 22),
                         SizedBox(width: 8),
                         Text('تحلیل هوشمند', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                       ],
                     ),
-                    const SizedBox(height: 14),
-                    const Text.rich(
+                    SizedBox(height: 14),
+                    Text.rich(
                       TextSpan(
                         children: [
                           TextSpan(text: 'نقطه قوت: ', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.secondary)),
@@ -195,8 +195,8 @@ class _PerformanceReportScreenState extends State<PerformanceReportScreen> {
                       ),
                       style: TextStyle(fontSize: 14, height: 1.4),
                     ),
-                    const SizedBox(height: 10),
-                    const Text.rich(
+                    SizedBox(height: 10),
+                    Text.rich(
                       TextSpan(
                         children: [
                           TextSpan(text: 'قابل بهبود: ', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.error)),

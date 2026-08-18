@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -11,6 +12,7 @@ import 'core/widgets/app_scope.dart';
 import 'core/widgets/custom_nav_bar.dart';
 import 'core/notifications/notification_service.dart';
 import 'features/common/quick_create_modal.dart';
+import 'features/lock/lock_screen.dart';
 
 // Feature Screens
 import 'features/home/home_today_screen.dart';
@@ -46,22 +48,41 @@ class ZedPlanApp extends StatefulWidget {
 class _ZedPlanAppState extends State<ZedPlanApp> {
   late final AppSettings _settings = AppSettings(widget.prefs);
   late final PlannerStore _store = PlannerStore(widget.prefs);
+  late bool _isUnlocked;
+  late bool _lastAppLockEnabled;
 
   @override
   void initState() {
     super.initState();
+    _isUnlocked = !_settings.appLockEnabled;
+    _lastAppLockEnabled = _settings.appLockEnabled;
+    _settings.addListener(() {
+      final current = _settings.appLockEnabled;
+      if (current != _lastAppLockEnabled && mounted) {
+        setState(() {
+          if (current) {
+            _isUnlocked = false;
+          } else {
+            _isUnlocked = true;
+          }
+          _lastAppLockEnabled = current;
+        });
+      }
+    });
     _initNotifications();
   }
 
   Future<void> _initNotifications() async {
     final service = NotificationService.instance;
+    blockAlarmEnabledGlobal = _settings.blockAlarmEnabled;
     await service.init(seedColor: _settings.seedColor);
     if (!_settings.notificationsEnabled) return;
     await service.reschedule(_store, fa: _settings.locale.languageCode == 'fa');
-    // Keep the schedule in sync whenever blocks change.
+    // Keep the schedule in sync whenever blocks/settings change.
     _store.addListener(() {
       if (!_settings.notificationsEnabled) return;
       service.setSeedColor(_settings.seedColor);
+      blockAlarmEnabledGlobal = _settings.blockAlarmEnabled;
       service.reschedule(_store, fa: _settings.locale.languageCode == 'fa');
     });
   }
@@ -71,6 +92,27 @@ class _ZedPlanAppState extends State<ZedPlanApp> {
     return AnimatedBuilder(
       animation: Listenable.merge([_settings, _store]),
       builder: (context, _) {
+        final platformBrightness =
+            WidgetsBinding.instance.platformDispatcher.platformBrightness;
+        final effectiveBrightness = _settings.themeMode == ThemeMode.dark
+            ? Brightness.dark
+            : _settings.themeMode == ThemeMode.light
+                ? Brightness.light
+                : platformBrightness;
+
+        AppColors.brightness = effectiveBrightness;
+        AppColors.seed = _settings.seedColor;
+
+        final home = !_settings.onboarded
+            ? OnboardingScreen(
+                settings: _settings,
+                onFinished: () {},
+              )
+            : (_settings.appLockEnabled && !_isUnlocked)
+                ? LockScreen(
+                    onUnlocked: () => setState(() => _isUnlocked = true))
+                : const MainNavigationShell();
+
         return AppScope(
           settings: _settings,
           store: _store,
@@ -92,9 +134,6 @@ class _ZedPlanAppState extends State<ZedPlanApp> {
               Locale('en', ''),
             ],
             builder: (context, child) {
-              // Resolve AppColors' theme-aware tokens for everything below.
-              AppColors.brightness = Theme.of(context).brightness;
-              AppColors.seed = _settings.seedColor;
               return Directionality(
                 textDirection: _settings.locale.languageCode == 'fa'
                     ? TextDirection.rtl
@@ -102,12 +141,7 @@ class _ZedPlanAppState extends State<ZedPlanApp> {
                 child: child ?? const SizedBox.shrink(),
               );
             },
-            home: _settings.onboarded
-                ? const MainNavigationShell()
-                : OnboardingScreen(
-                    settings: _settings,
-                    onFinished: () {}, // settings notify → MaterialApp rebuilds with the shell
-                  ),
+            home: home,
           ),
         );
       },
@@ -127,7 +161,8 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
 
   void _openTaskDetail(String taskId) {
-    Navigator.of(context).push(MaterialPageRoute(builder: (_) => TaskDetailScreen(taskId: taskId)));
+    Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => TaskDetailScreen(taskId: taskId)));
   }
 
   @override
@@ -180,9 +215,26 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text(
-                  'ZedPlan',
-                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
+                Row(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: Image.asset(
+                        'assets/images/logo.png',
+                        width: 36,
+                        height: 36,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    const Text(
+                      'ZedPlan',
+                      style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 4),
                 Text(

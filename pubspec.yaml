@@ -48,22 +48,35 @@ dependencies:
   uuid: ^4.4.0
   shamsi_date: ^1.0.4
   timezone: ^0.9.2
+  audioplayers: ^6.0.0
+  local_auth: ^2.2.0
+  crypto: ^3.0.6
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^6.0.0
+  flutter_lints: ^3.0.2
   drift_dev: ^2.18.0
   build_runner: ^2.4.9
+  flutter_launcher_icons: ^0.14.4
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/images/logo.png
+    - assets/audio/rain.mp3
+    - assets/audio/forest.mp3
+    - assets/audio/cafe.mp3
+    - assets/audio/waves.mp3
+    - assets/audio/white_noise.mp3
+    - assets/audio/zen_chimes.mp3
 
-  # To add assets to your application, add an assets section, like this:
-  # assets:
-  #   - images/a_dot_burr.jpeg
-  #   - images/a_dot_ham.jpeg
-
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/images/logo.png
+  adaptive_icon_background: "#FFFFFF"
+  
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
 
