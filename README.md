@@ -151,7 +151,18 @@ flutter test         # 43 tests: store persistence, date/Jalali math,
 
 ## 🗺 Roadmap
 
-**Done ✅** — real persisted data · dark/light + custom color · Jalali/Gregorian · 24h time blocking with categories & conflict checks · outcomes & distraction analytics · habits/goals/projects/notes · focus recording · daily/weekly reviews · notifications · onboarding · skeletons & animations
+**Done ✅** 
+— real persisted data 
+· dark/light + custom color 
+· Jalali/Gregorian 
+· 24h time blocking with categories & conflict checks 
+· outcomes & distraction analytics 
+· habits/goals/projects/notes 
+· focus recording 
+· daily/weekly reviews 
+· notifications 
+· onboarding 
+· skeletons & animations
 
 **Next 🔜**
 - [ ] Drift (SQLite) database behind the store
