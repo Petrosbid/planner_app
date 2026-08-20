@@ -45,6 +45,8 @@
   </table>
 </div>
 
+**more Sceenshots:** https://github.com/Petrosbid/planner_app/tree/main/screenshots
+
 ---
 ## 📖 About
 
