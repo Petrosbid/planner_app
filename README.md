@@ -18,30 +18,32 @@
 ---
 ## 📸 Screenshots
 
-<table>
-  <tr>
-    <td align="center">
-      <img src="https://github.com/user-attachments/assets/99096607-bcdd-4413-a511-4ce981acd629" width="220" />
-    </td>
-    <td align="center">
-      <img src="https://github.com/user-attachments/assets/f56e2ab4-1059-47da-8797-2ed9a92d1cd1" width="220" />
-    </td>
-    <td align="center">
-      <img src="https://github.com/user-attachments/assets/5f876abd-3e33-48b3-8d03-d6d43ddac335" width="220" />
-    </td>
-  </tr>
-  <tr>
-    <td align="center">
-      <img src="https://github.com/user-attachments/assets/cf75e47f-4a2b-4631-918b-3719aa66400d" width="220" />
-    </td>
-    <td align="center">
-      <img src="https://github.com/user-attachments/assets/f32be7c4-5be9-4f87-85dd-4c6d23551d34" width="220" />
-    </td>
-    <td align="center">
-      <img width="1080" height="1669" alt="15" src="https://github.com/user-attachments/assets/a3d73419-9473-420a-95b8-0f62de556f84" />
-    </td>
-  </tr>
-</table>
+<div align="center">
+  <table>
+    <tr>
+      <td align="center">
+        <img src="https://github.com/user-attachments/assets/99096607-bcdd-4413-a511-4ce981acd629" width="220" />
+      </td>
+      <td align="center">
+        <img src="https://github.com/user-attachments/assets/f56e2ab4-1059-47da-8797-2ed9a92d1cd1" width="220" />
+      </td>
+      <td align="center">
+        <img src="https://github.com/user-attachments/assets/5f876abd-3e33-48b3-8d03-d6d43ddac335" width="220" />
+      </td>
+    </tr>
+    <tr>
+      <td align="center">
+        <img src="https://github.com/user-attachments/assets/cf75e47f-4a2b-4631-918b-3719aa66400d" width="220" />
+      </td>
+      <td align="center">
+        <img src="https://github.com/user-attachments/assets/f32be7c4-5be9-4f87-85dd-4c6d23551d34" width="220" />
+      </td>
+      <td align="center">
+        <img width="220" src="https://github.com/user-attachments/assets/a3d73419-9473-420a-95b8-0f62de556f84" />
+      </td>
+    </tr>
+  </table>
+</div>
 
 ---
 ## 📖 About
