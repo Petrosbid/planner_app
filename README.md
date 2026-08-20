@@ -38,7 +38,7 @@
       <img src="https://github.com/user-attachments/assets/f32be7c4-5be9-4f87-85dd-4c6d23551d34" width="220" />
     </td>
     <td align="center">
-      <!-- خالی برای حفظ ساختار ۳ ستونه -->
+      <img width="1080" height="1669" alt="15" src="https://github.com/user-attachments/assets/a3d73419-9473-420a-95b8-0f62de556f84" />
     </td>
   </tr>
 </table>
