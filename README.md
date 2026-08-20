@@ -16,7 +16,15 @@
 </div>
 
 ---
+## 📸 Screenshots
 
+<img width="813" height="1280" alt="13" src="https://github.com/user-attachments/assets/99096607-bcdd-4413-a511-4ce981acd629" />
+<img width="817" height="1280" alt="9" src="https://github.com/user-attachments/assets/f56e2ab4-1059-47da-8797-2ed9a92d1cd1" />
+<img width="820" height="1280" alt="6" src="https://github.com/user-attachments/assets/5f876abd-3e33-48b3-8d03-d6d43ddac335" />
+<img width="786" height="1280" alt="5" src="https://github.com/user-attachments/assets/cf75e47f-4a2b-4631-918b-3719aa66400d" />
+<img width="825" height="1280" alt="4" src="https://github.com/user-attachments/assets/f32be7c4-5be9-4f87-85dd-4c6d23551d34" />
+
+---
 ## 📖 About
 
 ZedPlan is a **real, working planner** — not a mockup. Everything you create is stored on your device and survives restarts. It combines calendar time-blocking, tasks, habits, focus sessions, reviews, and behavioral analytics into one calm, bilingual (Persian/English, RTL-first) experience with full **Jalali & Gregorian calendar** support.
