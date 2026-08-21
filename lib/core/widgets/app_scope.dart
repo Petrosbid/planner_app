@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
 
+import '../controllers/achievement_store.dart';
 import '../controllers/app_settings.dart';
 import '../controllers/planner_store.dart';
 
-/// Exposes the app-wide [AppSettings] and [PlannerStore] down the tree.
+/// Exposes the app-wide [AppSettings], [PlannerStore], and [AchievementStore] down the tree.
 class AppScope extends InheritedWidget {
   final AppSettings settings;
   final PlannerStore store;
+  final AchievementStore achievementStore;
 
   const AppScope({
     super.key,
     required this.settings,
     required this.store,
+    required this.achievementStore,
     required super.child,
   });
 
@@ -23,5 +26,7 @@ class AppScope extends InheritedWidget {
 
   @override
   bool updateShouldNotify(AppScope oldWidget) =>
-      oldWidget.settings != settings || oldWidget.store != store;
+      oldWidget.settings != settings ||
+      oldWidget.store != store ||
+      oldWidget.achievementStore != achievementStore;
 }

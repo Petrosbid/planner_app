@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'core/controllers/achievement_store.dart';
 import 'core/controllers/app_settings.dart';
 import 'core/controllers/planner_store.dart';
 import 'core/localization/app_localizations.dart';
 import 'core/theme/app_colors.dart';
 import 'core/theme/app_theme.dart';
+import 'core/widgets/achievement_toast.dart';
 import 'core/widgets/app_scope.dart';
 import 'core/widgets/custom_nav_bar.dart';
 import 'core/notifications/notification_service.dart';
@@ -15,6 +17,7 @@ import 'features/common/quick_create_modal.dart';
 import 'features/lock/lock_screen.dart';
 
 // Feature Screens
+import 'features/achievements/achievements_screen.dart';
 import 'features/home/home_today_screen.dart';
 import 'features/calendar/calendar_week_screen.dart';
 import 'features/tasks/task_list_screen.dart';
@@ -48,6 +51,8 @@ class ZedPlanApp extends StatefulWidget {
 class _ZedPlanAppState extends State<ZedPlanApp> {
   late final AppSettings _settings = AppSettings(widget.prefs);
   late final PlannerStore _store = PlannerStore(widget.prefs);
+  late final AchievementStore _achievementStore =
+      AchievementStore(widget.prefs);
   late bool _isUnlocked;
   late bool _lastAppLockEnabled;
 
@@ -69,28 +74,46 @@ class _ZedPlanAppState extends State<ZedPlanApp> {
         });
       }
     });
+
+    // Check for achievement unlocks whenever planner data changes
+    _store.addListener(_checkAchievements);
+    _checkAchievements();
+
     _initNotifications();
+  }
+
+  void _checkAchievements() {
+    _achievementStore.checkAndUnlock(_store);
   }
 
   Future<void> _initNotifications() async {
     final service = NotificationService.instance;
     blockAlarmEnabledGlobal = _settings.blockAlarmEnabled;
     await service.init(seedColor: _settings.seedColor);
-    if (!_settings.notificationsEnabled) return;
-    await service.reschedule(_store, fa: _settings.locale.languageCode == 'fa');
-    // Keep the schedule in sync whenever blocks/settings change.
-    _store.addListener(() {
-      if (!_settings.notificationsEnabled) return;
-      service.setSeedColor(_settings.seedColor);
-      blockAlarmEnabledGlobal = _settings.blockAlarmEnabled;
-      service.reschedule(_store, fa: _settings.locale.languageCode == 'fa');
-    });
+    if (_settings.notificationsEnabled) {
+      await service.reschedule(_store, fa: _settings.locale.languageCode == 'fa');
+    }
+    // Keep the schedule in sync whenever blocks OR settings change.
+    _store.addListener(_onDataChanged);
+    _settings.addListener(_onDataChanged);
+  }
+
+  /// Reschedules all notifications whenever any relevant data or setting changes.
+  void _onDataChanged() {
+    final service = NotificationService.instance;
+    service.setSeedColor(_settings.seedColor);
+    blockAlarmEnabledGlobal = _settings.blockAlarmEnabled;
+    if (!_settings.notificationsEnabled) {
+      service.setEnabled(false, _store);
+      return;
+    }
+    service.reschedule(_store, fa: _settings.locale.languageCode == 'fa');
   }
 
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: Listenable.merge([_settings, _store]),
+      animation: Listenable.merge([_settings, _store, _achievementStore]),
       builder: (context, _) {
         final platformBrightness =
             WidgetsBinding.instance.platformDispatcher.platformBrightness;
@@ -116,6 +139,7 @@ class _ZedPlanAppState extends State<ZedPlanApp> {
         return AppScope(
           settings: _settings,
           store: _store,
+          achievementStore: _achievementStore,
           child: MaterialApp(
             title: 'ZedPlan',
             debugShowCheckedModeBanner: false,
@@ -168,6 +192,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final achStore = AppScope.of(context).achievementStore;
 
     final List<Widget> screens = [
       HomeTodayScreen(
@@ -176,6 +201,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
           if (route == 'tasks') setState(() => _currentTabIndex = 2);
           if (route == 'calendar') setState(() => _currentTabIndex = 1);
           if (route == 'habits') _openScreen(const HabitsConsistencyScreen());
+          if (route == 'achievements') _openScreen(const AchievementsScreen());
         },
         onOpenProfile: () => _openScreen(const ProfileScreen()),
       ),
@@ -186,25 +212,29 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
       const FocusSessionScreen(),
       InsightsAnalyticsScreen(
         onOpenWeeklyReview: () => _openScreen(const WeeklyReviewScreen()),
+        onOpenAchievements: () => _openScreen(const AchievementsScreen()),
       ),
     ];
 
-    return Scaffold(
-      key: _scaffoldKey,
-      drawer: _buildAppDrawer(l10n),
-      body: IndexedStack(
-        index: _currentTabIndex,
-        children: screens,
-      ),
-      bottomNavigationBar: CustomBottomNavBar(
-        currentIndex: _currentTabIndex,
-        onTap: (index) => setState(() => _currentTabIndex = index),
-        onQuickCreateTap: () => QuickCreateModal.show(context),
+    return AchievementToastOverlay(
+      onOpenAchievements: () => _openScreen(const AchievementsScreen()),
+      child: Scaffold(
+        key: _scaffoldKey,
+        drawer: _buildAppDrawer(l10n, achStore),
+        body: IndexedStack(
+          index: _currentTabIndex,
+          children: screens,
+        ),
+        bottomNavigationBar: CustomBottomNavBar(
+          currentIndex: _currentTabIndex,
+          onTap: (index) => setState(() => _currentTabIndex = index),
+          onQuickCreateTap: () => QuickCreateModal.show(context),
+        ),
       ),
     );
   }
 
-  Widget _buildAppDrawer(AppLocalizations l10n) {
+  Widget _buildAppDrawer(AppLocalizations l10n, AchievementStore achStore) {
     return Drawer(
       child: ListView(
         padding: EdgeInsets.zero,
@@ -265,6 +295,36 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
             onTap: () => _openScreen(const HabitsConsistencyScreen()),
           ),
           ListTile(
+            leading: const Icon(Icons.emoji_events_outlined, color: Color(0xFFFFB800)),
+            title: Row(
+              children: [
+                Text(
+                  l10n.translate('achievements'),
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const Spacer(),
+                if (achStore.unlockedCount > 0)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFB800).withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFFFFB800), width: 1),
+                    ),
+                    child: Text(
+                      '${achStore.unlockedCount}',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFFFFB800),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            onTap: () => _openScreen(const AchievementsScreen()),
+          ),
+          ListTile(
             leading: const Icon(Icons.folder_open),
             title: Text(l10n.translate('projectsTitle')),
             onTap: () => _openScreen(const ProjectsScreen()),
@@ -301,3 +361,4 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
     Navigator.of(context).push(MaterialPageRoute(builder: (_) => screen));
   }
 }
+

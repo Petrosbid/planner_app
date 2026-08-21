@@ -340,7 +340,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             onChanged: (v) async {
               final store = AppScope.of(context).store;
               await _settings.setNotificationsEnabled(v);
-              await NotificationService.instance.setEnabled(v, store);
+              await NotificationService.instance.setEnabled(
+                v,
+                store,
+                alarmEnabled: _settings.blockAlarmEnabled,
+              );
             },
           ),
           SwitchListTile(
@@ -349,7 +353,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
             subtitle: Text(l10n.translate('blockEndAlarmDesc'),
                 style: AppTypography.bodySm().copyWith(fontSize: 11)),
             value: _settings.blockAlarmEnabled,
-            onChanged: (v) => _settings.setBlockAlarmEnabled(v),
+            onChanged: (v) async {
+              // Capture context-dependent values before any async gap.
+              final store = AppScope.of(context).store;
+              final fa = AppLocalizations.of(context).isFa;
+              await _settings.setBlockAlarmEnabled(v);
+              // Replace already-scheduled notifications so they pick up the
+              // new alarm sound immediately (Android notifs are immutable).
+              if (_settings.notificationsEnabled) {
+                await NotificationService.instance.reschedule(store, fa: fa);
+              }
+            },
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),

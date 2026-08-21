@@ -118,9 +118,12 @@ class NotificationService {
   }
 
   /// Enables or disables everything. When re-enabled, [reschedule] should be
-  /// called with the current store.
-  Future<void> setEnabled(bool enabled, PlannerStore store) async {
+  /// called with the current store. Optionally pass [alarmEnabled] to sync the
+  /// global alarm flag before scheduling (avoids stale alarm state).
+  Future<void> setEnabled(bool enabled, PlannerStore store,
+      {bool? alarmEnabled}) async {
     _enabled = enabled;
+    if (alarmEnabled != null) blockAlarmEnabledGlobal = alarmEnabled;
     if (!_initialized) return;
     if (!enabled) {
       await _plugin.cancelAll();

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:planner_app/core/controllers/achievement_store.dart';
 import 'package:planner_app/core/controllers/app_settings.dart';
 import 'package:planner_app/core/controllers/planner_store.dart';
 import 'package:planner_app/core/theme/app_theme.dart';
@@ -17,12 +18,14 @@ void main() {
   });
 
   late PlannerStore store;
+  late AchievementStore achievementStore;
 
   setUp(() async {
     TestWidgetsFlutterBinding.ensureInitialized();
     SharedPreferences.setMockInitialValues({});
     final prefs = await SharedPreferences.getInstance();
     store = PlannerStore(prefs);
+    achievementStore = AchievementStore(prefs);
   });
 
   testWidgets('HomeTodayScreen shows empty state when no tasks exist', (WidgetTester tester) async {
@@ -30,6 +33,7 @@ void main() {
     final app = AppScope(
       settings: AppSettings(prefs),
       store: store,
+      achievementStore: achievementStore,
       child: MaterialApp(
         theme: AppTheme.lightTheme,
         home: Directionality(
@@ -56,6 +60,7 @@ void main() {
     final app = AppScope(
       settings: AppSettings(prefs),
       store: store,
+      achievementStore: achievementStore,
       child: MaterialApp(
         theme: AppTheme.lightTheme,
         locale: const Locale('fa'),
@@ -80,6 +85,7 @@ void main() {
     final app = AppScope(
       settings: AppSettings(prefs),
       store: store,
+      achievementStore: achievementStore,
       child: MaterialApp(
         theme: AppTheme.lightTheme,
         home: const Directionality(
@@ -100,6 +106,7 @@ void main() {
     final app = AppScope(
       settings: AppSettings(prefs),
       store: store,
+      achievementStore: achievementStore,
       child: MaterialApp(
         theme: AppTheme.lightTheme,
         home: Directionality(
@@ -121,6 +128,7 @@ void main() {
     final app = AppScope(
       settings: AppSettings(prefs),
       store: store,
+      achievementStore: achievementStore,
       child: MaterialApp(
         theme: AppTheme.lightTheme,
         locale: const Locale('fa'),

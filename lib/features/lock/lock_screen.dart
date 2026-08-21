@@ -35,8 +35,21 @@ class _LockScreenState extends State<LockScreen> {
     final canCheck = await _auth.canCheckBiometrics;
     final isSupported = await _auth.isDeviceSupported();
 
+    // Also verify at least one biometric (fingerprint / face) is enrolled.
+    // A device can report canCheckBiometrics=true but have no enrolled
+    // biometrics, causing authentication to always fail.
+    List<BiometricType> enrolled = [];
+    if (canCheck && isSupported) {
+      try {
+        enrolled = await _auth.getAvailableBiometrics();
+      } catch (_) {
+        enrolled = [];
+      }
+    }
+
     if (!mounted) return;
-    setState(() => _biometricAvailable = canCheck && isSupported);
+    setState(() => _biometricAvailable =
+        canCheck && isSupported && enrolled.isNotEmpty);
 
     if (_biometricAvailable) {
       await _unlockWithBiometrics();

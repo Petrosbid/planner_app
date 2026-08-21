@@ -335,6 +335,85 @@ class _HomeTodayScreenState extends State<HomeTodayScreen> with SimulatedFetchMi
                   ),
                 ),
 
+                // Discipline & Achievements Card
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  sliver: SliverToBoxAdapter(
+                    child: FadeSlideIn(
+                      delay: const Duration(milliseconds: 280),
+                      child: GlassCard(
+                        child: InkWell(
+                          onTap: () => widget.onNavigate('achievements'),
+                          borderRadius: BorderRadius.circular(16),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 44,
+                                height: 44,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFFB800).withValues(alpha: 0.15),
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: const Color(0xFFFFB800), width: 1.5),
+                                ),
+                                child: const Icon(Icons.emoji_events_rounded,
+                                    color: Color(0xFFFFB800), size: 24),
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Text(
+                                          l10n.translate('achievements'),
+                                          style: const TextStyle(
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 6, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.primary.withValues(alpha: 0.12),
+                                            borderRadius: BorderRadius.circular(6),
+                                          ),
+                                          child: Text(
+                                            '${ZedDateUtils.toFaDigits(store.disciplineScore, fa: isFa)} ${l10n.translate('disciplineScore')}',
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
+                                              color: AppColors.primary,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 3),
+                                    Text(
+                                      l10n.translate('recentAchievements'),
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: AppColors.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Icon(
+                                isFa ? Icons.chevron_left_rounded : Icons.chevron_right_rounded,
+                                color: AppColors.onSurfaceVariant,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
                 const SliverToBoxAdapter(child: SizedBox(height: 100)),
               ],
             );

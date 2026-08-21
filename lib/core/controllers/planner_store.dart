@@ -570,6 +570,220 @@ class PlannerStore extends ChangeNotifier {
 
   // ---------- computed analytics ----------
 
+  /// Total completed tasks count
+  int get completedTasksCount => _tasks.where((t) => t.isCompleted).length;
+
+  /// Total all-time focus minutes
+  int get totalFocusMinutes =>
+      _focusRecords.fold(0, (sum, r) => sum + r.minutes);
+
+  /// Longest single focus session duration in minutes
+  int get longestFocusSessionMinutes => _focusRecords.isEmpty
+      ? 0
+      : _focusRecords.map((r) => r.minutes).reduce((a, b) => a > b ? a : b);
+
+  /// Best habit streak among all current habits
+  int get bestHabitStreakAllTime {
+    if (_habits.isEmpty) return 0;
+    var maxStreak = 0;
+    for (final h in _habits) {
+      final s = habitStreak(h);
+      if (s > maxStreak) maxStreak = s;
+    }
+    return maxStreak;
+  }
+
+  /// Count of days where all habits were marked completed
+  int get perfectHabitDaysCount {
+    if (_habits.isEmpty) return 0;
+    final daySet = <String>{};
+    for (final h in _habits) {
+      daySet.addAll(h.markedDays);
+    }
+    var perfectDays = 0;
+    for (final day in daySet) {
+      final allDone = _habits.every((h) => h.markedDays.contains(day));
+      if (allDone) perfectDays++;
+    }
+    return perfectDays;
+  }
+
+  /// Consecutive days where all tasks created were completed
+  int get dailyTaskStreak {
+    if (_tasks.isEmpty) return 0;
+    var streak = 0;
+    var day = DateTime.now();
+
+    // If today has tasks and not all are completed, start checking from yesterday if today is still in progress
+    final todayTasksList = _tasks.where((t) => _sameDay(t.createdAt, day)).toList();
+    if (todayTasksList.isNotEmpty && todayTasksList.every((t) => t.isCompleted)) {
+      streak++;
+    }
+    day = day.subtract(const Duration(days: 1));
+
+    while (true) {
+      final dayTasks = _tasks.where((t) => _sameDay(t.createdAt, day)).toList();
+      if (dayTasks.isEmpty) {
+        // If no tasks were created on this day, check if habits were done
+        final hasHabit = _habits.any((h) => h.markedDays.contains(_dayKey(day)));
+        if (hasHabit) {
+          streak++;
+          day = day.subtract(const Duration(days: 1));
+          continue;
+        } else {
+          break;
+        }
+      }
+      if (dayTasks.every((t) => t.isCompleted)) {
+        streak++;
+        day = day.subtract(const Duration(days: 1));
+      } else {
+        break;
+      }
+    }
+    return streak;
+  }
+
+  /// Overall composite Discipline Score (0 to 100)
+  int get disciplineScore {
+    if (_tasks.isEmpty && _habits.isEmpty && _focusRecords.isEmpty && _blocks.isEmpty) {
+      return 0;
+    }
+
+    // 1. Execution rate (30% weight)
+    final exec = executionRate; // 0..1
+
+    // 2. Commitment reliability (25% weight)
+    final commitments = _tasks.where((t) => t.isCommitment).toList();
+    final commit = commitments.isEmpty
+        ? (exec > 0 ? exec : 0.5)
+        : commitments.where((t) => t.isCompleted).length / commitments.length;
+
+    // 3. Habit consistency (25% weight)
+    double habitScore = 0.0;
+    if (_habits.isNotEmpty) {
+      final activeStreaks = _habits.map(habitStreak).fold<int>(0, (a, b) => a + b);
+      final avgStreak = activeStreaks / _habits.length;
+      habitScore = (avgStreak / 7.0).clamp(0.0, 1.0);
+    } else {
+      habitScore = exec;
+    }
+
+    // 4. Focus & Block adherence (20% weight)
+    double focusScore = 0.0;
+    if (_blocks.isNotEmpty) {
+      final blocksWithOutcome = _blocks.where((b) => b.hasOutcome).toList();
+      if (blocksWithOutcome.isNotEmpty) {
+        final doneBlocks = blocksWithOutcome.where((b) => b.isDone).length;
+        focusScore = doneBlocks / blocksWithOutcome.length;
+      } else {
+        focusScore = 0.5;
+      }
+    } else if (_focusRecords.isNotEmpty) {
+      focusScore = (_focusRecords.length / 5.0).clamp(0.0, 1.0);
+    } else {
+      focusScore = exec;
+    }
+
+    final composite = (exec * 30) + (commit * 25) + (habitScore * 25) + (focusScore * 20);
+    return composite.round().clamp(0, 100);
+  }
+
+  /// Completed and total tasks grouped by priority (0: low, 1: med, 2: high)
+  Map<int, ({int total, int completed})> get tasksByPriority {
+    final result = <int, ({int total, int completed})>{
+      0: (total: 0, completed: 0),
+      1: (total: 0, completed: 0),
+      2: (total: 0, completed: 0),
+    };
+
+    for (final t in _tasks) {
+      final p = t.priority.clamp(0, 2);
+      final current = result[p]!;
+      result[p] = (
+        total: current.total + 1,
+        completed: current.completed + (t.isCompleted ? 1 : 0),
+      );
+    }
+    return result;
+  }
+
+  /// Average estimation accuracy ratio (1.0 = perfect, >1 under-estimated, <1 over-estimated)
+  double get avgEstimateAccuracy {
+    final completedWithActual =
+        _tasks.where((t) => t.isCompleted && t.actualMinutes > 0 && t.estimatedMinutes > 0).toList();
+    if (completedWithActual.isEmpty) return 1.0;
+
+    final sum = completedWithActual.fold<double>(
+        0.0, (acc, t) => acc + (t.estimatedMinutes / t.actualMinutes));
+    return sum / completedWithActual.length;
+  }
+
+  /// Focus distribution across parts of day: Morning (5-12), Afternoon (12-17), Evening (17-22), Night (22-5)
+  Map<String, int> get focusByTimeOfDay {
+    final dist = <String, int>{
+      'morning': 0,
+      'afternoon': 0,
+      'evening': 0,
+      'night': 0,
+    };
+
+    for (final r in _focusRecords) {
+      final h = r.startedAt.hour;
+      if (h >= 5 && h < 12) {
+        dist['morning'] = dist['morning']! + r.minutes;
+      } else if (h >= 12 && h < 17) {
+        dist['afternoon'] = dist['afternoon']! + r.minutes;
+      } else if (h >= 17 && h < 22) {
+        dist['evening'] = dist['evening']! + r.minutes;
+      } else {
+        dist['night'] = dist['night']! + r.minutes;
+      }
+    }
+    return dist;
+  }
+
+  /// Completed tasks count per day for the last 7 days (oldest to newest)
+  List<int> get completionCountsLast7Days {
+    final result = <int>[];
+    for (var i = 6; i >= 0; i--) {
+      final day = DateTime.now().subtract(Duration(days: i));
+      result.add(_tasks.where((t) => _sameDay(t.createdAt, day) && t.isCompleted).length);
+    }
+    return result;
+  }
+
+  /// Total tasks count per day for the last 7 days (oldest to newest)
+  List<int> get totalTasksCountsLast7Days {
+    final result = <int>[];
+    for (var i = 6; i >= 0; i--) {
+      final day = DateTime.now().subtract(Duration(days: i));
+      result.add(_tasks.where((t) => _sameDay(t.createdAt, day)).length);
+    }
+    return result;
+  }
+
+  /// Habits ranked by active streak (descending)
+  List<MapEntry<HabitItem, int>> get rankedHabits {
+    final list = _habits.map((h) => MapEntry(h, habitStreak(h))).toList();
+    list.sort((a, b) => b.value.compareTo(a.value));
+    return list;
+  }
+
+  /// Energy vs output correlation pairs (energy: 1..5, output: count of completed tasks or focus mins)
+  List<({int energy, int tasksDone, int focusMins})> get energyVsOutputPoints {
+    final points = <({int energy, int tasksDone, int focusMins})>[];
+    for (final review in _reviews) {
+      final day = review.date;
+      final tasksDone = _tasks.where((t) => _sameDay(t.createdAt, day) && t.isCompleted).length;
+      final focusMins = _focusRecords
+          .where((r) => _sameDay(r.startedAt, day))
+          .fold<int>(0, (sum, r) => sum + r.minutes);
+      points.add((energy: review.energyRating, tasksDone: tasksDone, focusMins: focusMins));
+    }
+    return points;
+  }
+
   /// Completed tasks / all tasks ever created (0 when empty).
   double get executionRate => _tasks.isEmpty
       ? 0
